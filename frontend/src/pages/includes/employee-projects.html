@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Projects | RemoteTeamPro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    body { background:#0b1120; color:#e2e8f0; font-family:'Inter',sans-serif; }
+    .glass { background:rgba(17,25,40,0.85); border:1px solid rgba(255,255,255,0.05); border-radius:1rem; backdrop-filter:blur(12px); }
+    .loader { border:4px solid rgba(255,255,255,0.1); border-top:4px solid #06b6d4; border-radius:50%; width:32px; height:32px; animation:spin 1s linear infinite; }
+    @keyframes spin {100%{transform:rotate(360deg);}}
+  </style>
+</head>
+
+<body class="p-8">
+  <header class="flex justify-between items-center mb-10">
+    <h1 class="text-3xl font-bold text-cyan-400">My Projects</h1>
+    <button id="refreshBtn" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg shadow">Refresh</button>
+  </header>
+
+  <section class="glass p-6 mb-8 flex flex-col items-center">
+  <h2 class="text-lg font-semibold text-cyan-300 mb-4 self-start">Projects Overview</h2>
+  <div class="relative w-[240px] h-[240px]">
+    <canvas id="projectChart"></canvas>
+  </div>
+</section>
+
+
+  <section class="glass p-6">
+    <h2 class="text-lg font-semibold text-cyan-300 mb-4">My Assigned Projects</h2>
+    <div id="loader" class="loader mx-auto my-6 hidden"></div>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse">
+        <thead class="border-b border-gray-700 text-gray-300 text-sm uppercase">
+          <tr>
+            <th class="p-2">Project</th>
+            <th class="p-2">Manager</th>
+            <th class="p-2">Status</th>
+            <th class="p-2">Deadline</th>
+          </tr>
+        </thead>
+        <tbody id="projectsTable" class="text-sm"></tbody>
+      </table>
+    </div>
+  </section>
+
+<script>
+(async()=>{
+  console.log("✅ Employee Projects script loaded");
+  const API = "http://localhost/RemoteTeamPro/backend/api/employee-projects.php";
+  const loader = document.getElementById("loader");
+  const projectsTable = document.getElementById("projectsTable");
+  const refreshBtn = document.getElementById("refreshBtn");
+  let chartInstance = null;
+
+  const showLoader = (show)=>loader.classList.toggle("hidden",!show);
+  const fetchJSON = async (url) => {
+    console.log("Fetching:", url);
+    const res = await fetch(url);
+    const data = await res.json().catch(()=>[]);
+    if (!res.ok) throw new Error("Network error");
+    return data;
+  };
+
+  async function loadProjects(){
+    showLoader(true);
+    try {
+      const res = await fetchJSON(`${API}?user_id=14`);
+      const projects = res.data || [];
+      renderProjects(projects);
+      updateChart(projects);
+    } catch(e){
+      console.error(e);
+      projectsTable.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Failed to load projects</td></tr>`;
+    } finally {
+      showLoader(false);
+    }
+  }
+
+  function renderProjects(projects){
+    projectsTable.innerHTML = "";
+    if(!projects.length){
+      projectsTable.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">No projects assigned</td></tr>`;
+      return;
+    }
+    projects.forEach(p=>{
+      const managerName = `${p.manager_first_name ?? ''} ${p.manager_last_name ?? ''}`.trim() || '-';
+      projectsTable.innerHTML += `
+        <tr class="border-b border-gray-800 hover:bg-gray-800/40">
+          <td class="p-2">${p.project_name}</td>
+          <td class="p-2">${managerName}</td>
+          <td class="p-2">${p.status}</td>
+          <td class="p-2">${p.deadline ?? '-'}</td>
+        </tr>`;
+    });
+  }
+
+ function updateChart(projects){
+  const counts = projects.reduce((a,p)=>{a[p.status]=(a[p.status]||0)+1;return a;}, {});
+  const ctx = document.getElementById("projectChart").getContext("2d");
+  if(chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx,{
+    type:"doughnut",
+    data:{
+      labels:Object.keys(counts),
+      datasets:[{
+        data:Object.values(counts),
+        backgroundColor:["#06b6d4","#facc15","#10b981","#ef4444"],
+        borderWidth:0
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:true,
+      aspectRatio:1, // makes it circular
+      cutout:"75%",
+      plugins:{
+        legend:{
+          labels:{ color:"#e2e8f0" },
+          position:"bottom"
+        }
+      }
+    }
+  });
+}
+
+
+  refreshBtn.addEventListener("click",loadProjects);
+  await loadProjects();
+})();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  logActivity('VIEW_PROJECTS', 'Viewed projects tab');
+});
+</script>
+</body>
+</html>

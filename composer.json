@@ -1,0 +1,22 @@
+{
+    "name": "remoteteampro/app",
+    "description": "RemoteTeamPro backend libraries",
+    "type": "project",
+    "require": {
+        "dompdf/dompdf": "^3.1",
+        "phpmailer/phpmailer": "^7.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Remoteteampro\\App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Ribin K Roy",
+            "email": "examplemail@mail.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}

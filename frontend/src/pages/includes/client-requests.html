@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Client Project Requests | RemoteTeamPro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body {
+  background: #0f172a;
+  font-family: 'Manrope', sans-serif;
+  color: #f1f5f9;
+}
+.fade-in { animation: fadeIn .5s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to {opacity:1; transform:translateY(0);} }
+.glass-card {
+  background: rgba(31, 41, 55, 0.75);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  transition: all 0.3s;
+}
+.glass-card:hover {
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.2);
+  border-color: rgba(124, 58, 237, 0.6);
+  transform: translateY(-2px);
+}
+.sort-btn { color: #9ca3af; transition: color 0.2s, background-color 0.2s; }
+.sort-btn:hover { color: #fff; }
+.sort-btn.active-sort { color: #c4b5fd; background-color: #313e54; font-weight: 600; }
+.toast { opacity: 0; pointer-events: none; transition: all 0.3s; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<main class="max-w-7xl mx-auto p-8 fade-in">
+<header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+  <div>
+    <h1 class="text-3xl font-bold flex items-center gap-3">
+      <i class="fas fa-briefcase text-violet-400"></i> Project Requests
+    </h1>
+    <p class="text-gray-400 text-sm mt-1">Manage and track your submitted project requests.</p>
+  </div>
+  <div class="flex gap-3 flex-wrap">
+    <button id="openNewReq" class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all">
+      <i class="fas fa-plus"></i> New Request
+    </button>
+    <div class="flex gap-2">
+      <button class="sort-btn px-3 py-2 rounded-lg hover:bg-gray-700/50" data-sort="budget"><i class="fas fa-wallet"></i> Budget</button>
+      <button class="sort-btn px-3 py-2 rounded-lg hover:bg-gray-700/50" data-sort="date"><i class="far fa-calendar-alt"></i> Date</button>
+      <button class="sort-btn px-3 py-2 rounded-lg hover:bg-gray-700/50" data-sort="status"><i class="fas fa-eye"></i> Status</button>
+    </div>
+  </div>
+</header>
+
+<section class="mb-10 glass-card rounded-2xl p-6 shadow-md">
+  <h2 class="text-lg font-semibold mb-4 text-gray-100 flex items-center gap-2">
+    <i class="fas fa-chart-pie text-violet-400"></i> Overview
+  </h2>
+  <div class="mx-auto max-w-xs">
+    <canvas id="reqChart" height="40"></canvas>
+  </div>
+</section>
+
+<div id="requestsTable" class="space-y-5"></div>
+</main>
+
+<div id="newReqModal" class="fixed inset-0 hidden items-center justify-center bg-black/50 backdrop-blur-sm z-50 transition-opacity duration-300">
+  <div class="bg-gray-900 rounded-2xl p-8 w-full max-w-lg shadow-2xl border border-gray-700 glass-card">
+    <h2 class="text-2xl font-semibold mb-6 flex items-center gap-2 text-violet-300">
+      <i class="fas fa-file-alt"></i> New Project Request
+    </h2>
+
+    <form id="newReqForm" class="grid gap-5">
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Project Name</label>
+        <input id="req_project_name" required class="w-full bg-gray-800/70 text-white border border-gray-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500 rounded-lg px-4 py-2.5 transition" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+        <textarea id="req_description" rows="4" class="w-full bg-gray-800/70 text-white border border-gray-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500 rounded-lg px-4 py-2.5 transition"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Expected Date</label>
+          <input type="date" id="req_expected_date" class="w-full bg-gray-800/70 text-white border border-gray-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500 rounded-lg px-4 py-2.5 transition" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Budget (₹)</label>
+          <input type="number" id="req_budget" class="w-full bg-gray-800/70 text-white border border-gray-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500 rounded-lg px-4 py-2.5 transition" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button type="button" id="reqCancel" class="px-4 py-2.5 border border-gray-700 rounded-lg hover:bg-gray-800 text-white transition">Cancel</button>
+        <button type="submit" class="px-5 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 shadow-md transition flex items-center gap-2">
+          <i class="fas fa-paper-plane"></i> Submit
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast fixed bottom-6 right-6 bg-gray-800 text-white px-5 py-3 rounded-lg shadow-lg z-50"></div>
+
+<script>
+(async () => {
+  const API_BASE = '/RemoteTeamPro/backend/api';
+  let reqChart = null;
+  let requestsData = [];
+
+  const showToast = (msg, type='info') => {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast fixed bottom-6 right-6 px-5 py-3 rounded-lg shadow-lg z-50 transition-all ${
+      type==='success' ? 'bg-green-600' : type==='error' ? 'bg-red-600' : 'bg-gray-800'
+    }`;
+    t.style.opacity = 1;
+    t.style.pointerEvents = 'auto';
+    setTimeout(()=>{t.style.opacity=0;t.style.pointerEvents='none';},2500);
+  };
+
+  const fetchJSON = async (url, opt={}) => {
+    try {
+      let fullUrl = url.startsWith('/') ? window.location.origin + url : url;
+      const r = await fetch(fullUrl, {credentials:'include', ...opt});
+      return await r.json();
+    } catch(e) {
+      console.error(e);
+      return [];
+    }
+  };
+
+  const escapeHtml = s => s ? s.replace(/[&<>"']/g, m => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
+  )) : '';
+
+  const renderRequests = data => {
+    const c = document.getElementById('requestsTable');
+    if(!data.length) {
+      c.innerHTML='<div class="p-10 text-center text-gray-400 glass-card rounded-2xl border border-gray-700">No requests yet.</div>';
+      return;
+    }
+    c.innerHTML = data.map(r=>{
+      const status = r.status?.trim() || 'Pending';
+      const date = r.requested_date && r.requested_date!=='0000-00-00' ? r.requested_date : (r.expected_date || 'N/A');
+      const budget = r.budget_allocated || r.budget || '0';
+      const desc = escapeHtml(r.description);
+      const name = escapeHtml(r.project_name || 'Unnamed Project');
+      let statusClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/30';
+      let statusIcon = 'fas fa-clock';
+      if (status === 'Approved'){statusClass='bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';statusIcon='fas fa-check-circle';}
+      else if(status==='Rejected'){statusClass='bg-red-500/10 text-red-400 border border-red-500/30';statusIcon='fas fa-times-circle';}
+      else if(status==='Under Review'){statusClass='bg-blue-500/10 text-blue-400 border border-blue-500/30';statusIcon='fas fa-search';}
+
+      const review = r.review_message ? `
+        <div class="mt-5 pt-4 border-t border-gray-700/50">
+          <div class="border-l-4 border-violet-500 pl-4 py-2 bg-gray-800/70 rounded-r-lg">
+            <p class="text-sm font-semibold text-violet-400 mb-1 flex items-center gap-2"><i class="fas fa-headset"></i> Team Feedback</p>
+            <p class="text-sm text-gray-300 italic mb-2 leading-relaxed">"${escapeHtml(r.review_message)}"</p>
+            <p class="text-xs text-gray-500">Reviewed by: <span class="font-medium text-gray-400">${r.reviewer_role || 'Admin'}</span></p>
+          </div>
+        </div>` : '';
+
+      return `
+        <div class="glass-card rounded-2xl p-6 shadow-xl transition hover:shadow-2xl hover:scale-[1.005]">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div class="flex-1 min-w-0 mb-4 sm:mb-0">
+              <h3 class="text-2xl font-extrabold text-white truncate mb-2">${name}</h3>
+              <p class="text-gray-400 text-sm mb-4 line-clamp-2">${desc}</p>
+              <div class="flex items-center space-x-6 text-sm">
+                <span class="text-gray-400 flex items-center gap-2">
+                  <i class="far fa-calendar-alt text-violet-400"></i>
+                  <span class="font-medium">Date:</span> ${date}
+                </span>
+                <span class="text-gray-400 flex items-center gap-2">
+                  <i class="fas fa-wallet text-violet-400"></i>
+                  <span class="font-medium">Budget:</span> <span class="font-bold text-emerald-400">₹${budget}</span>
+                </span>
+              </div>
+            </div>
+            <div class="flex-shrink-0">
+              <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider ${statusClass}">
+                <i class="${statusIcon}"></i> ${status}
+              </span>
+            </div>
+          </div>
+          ${review}
+        </div>`;
+    }).join('');
+  };
+
+  const updateChart = data => {
+    const ctx = document.getElementById('reqChart').getContext('2d');
+    const count = data.reduce((a,r)=>{a[r.status||'Pending']=(a[r.status||'Pending']||0)+1;return a;}, {});
+    const labels = Object.keys(count), values = Object.values(count);
+    if(reqChart) reqChart.destroy();
+    reqChart = new Chart(ctx, {
+      type:'doughnut',
+      data:{labels,datasets:[{data:values,backgroundColor:['#8b5cf6','#10b981','#ef4444','#3b82f6','#f59e0b','#6b7280']}]},
+      options:{plugins:{legend:{display:false}},aspectRatio:1}
+    });
+  };
+
+  const loadMyRequests = async () => {
+    const c=document.getElementById('requestsTable');
+    c.innerHTML='<div class="text-center text-gray-400 py-10">Loading...</div>';
+    const res = await fetchJSON(`${API_BASE}/client-project-request.php?action=list`);
+    requestsData = Array.isArray(res)?res:[];
+    renderRequests(requestsData);
+    updateChart(requestsData);
+  };
+
+  // Sorting
+  document.querySelectorAll('.sort-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active-sort'));
+      btn.classList.add('active-sort');
+      const type=btn.dataset.sort;
+      let sorted=[...requestsData];
+      if(type==='budget')sorted.sort((a,b)=>(b.budget_allocated||0)-(a.budget_allocated||0));
+      if(type==='date')sorted.sort((a,b)=>new Date(b.expected_date||0)-new Date(a.expected_date||0));
+      if(type==='status')sorted.sort((a,b)=>(a.status||'').localeCompare(b.status||''));
+      renderRequests(sorted);
+    });
+  });
+
+  // Modal
+  document.getElementById('openNewReq').onclick=()=>{
+    document.getElementById('newReqForm').reset();
+    document.getElementById('newReqModal').classList.remove('hidden');
+    document.getElementById('newReqModal').classList.add('flex');
+  };
+  document.getElementById('reqCancel').onclick=()=>{document.getElementById('newReqModal').classList.add('hidden');};
+
+  document.getElementById('newReqForm').onsubmit=async e=>{
+    e.preventDefault();
+    const p={project_name:req_project_name.value.trim(),description:req_description.value.trim(),expected_date:req_expected_date.value,budget:req_budget.value};
+    const res=await fetchJSON(`${API_BASE}/client-project-request.php?action=create`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
+    if(res.success){
+      showToast(`Request for '${p.project_name}' submitted successfully!`,'success');
+      document.getElementById('newReqModal').classList.add('hidden');
+      loadMyRequests();
+    }else showToast('Failed to submit.','error');
+  };
+
+  await loadMyRequests();
+})();
+</script>
+</body>
+</html>

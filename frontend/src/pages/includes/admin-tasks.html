@@ -1,0 +1,125 @@
+<!-- admin-tasks.html -->
+<div class="bg-gray-900 bg-opacity-80 backdrop-blur-md rounded-2xl p-6 shadow-lg text-white">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-2xl font-semibold">Company Tasks Overview</h2>
+    <button id="downloadCSV" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition">
+      Download CSV
+    </button>
+  </div>
+
+  <div id="tasksTable" class="overflow-x-auto rounded-xl bg-gray-800 p-2 shadow-inner"></div>
+</div>
+
+<script>
+(async () => {
+  const API = '/RemoteTeamPro/backend/api/admin-tasks.php'; // local scope only
+  const tableDiv = document.getElementById('tasksTable');
+  const downloadBtn = document.getElementById('downloadCSV');
+
+  const fetchJSON = async (url, options = {}) => {
+    try {
+      const res = await fetch(url, options);
+      // Guard against non-json responses (e.g., CSV download)
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        // Attempt to read JSON error body if available
+        if (contentType.includes('application/json')) {
+          return await res.json();
+        }
+        return { success: false, message: `HTTP ${res.status}` };
+      }
+      if (contentType.includes('application/json')) {
+        return await res.json();
+      }
+      // If not JSON (rare for this endpoint), return empty success
+      return { success: true, data: [] };
+    } catch (err) {
+      console.error('fetchJSON error', err);
+      return { success: false, data: [], message: err.message };
+    }
+  };
+
+  const formatDate = (isoDate) => {
+    if (!isoDate) return '-';
+    try {
+      const d = new Date(isoDate);
+      if (isNaN(d)) return isoDate;
+      return new Intl.DateTimeFormat('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }).format(d);
+    } catch {
+      return isoDate;
+    }
+  };
+
+  const renderTable = (tasks) => {
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      tableDiv.innerHTML = `<div class="text-gray-400 p-4">No tasks found for this company.</div>`;
+      return;
+    }
+
+    let html = `
+      <table class="min-w-full text-sm rounded-lg overflow-hidden bg-gray-800">
+        <thead class="bg-indigo-700">
+          <tr>
+            <th class="px-4 py-2 text-left">Task ID</th>
+            <th class="px-4 py-2 text-left">Task Name</th>
+            <th class="px-4 py-2 text-left">Status</th>
+            <th class="px-4 py-2 text-left">Priority</th>
+            <th class="px-4 py-2 text-left">Deadline</th>
+            <th class="px-4 py-2 text-left">Project</th>
+            <th class="px-4 py-2 text-left">Assigned To</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+    `;
+
+    tasks.forEach(t => {
+      const deadline = t.deadline || t.due_date || null;
+      html += `
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-4 py-2">${t.task_id ?? '-'}</td>
+          <td class="px-4 py-2 font-medium">${(t.task_name ?? '-')}</td>
+          <td class="px-4 py-2">${t.status ?? '-'}</td>
+          <td class="px-4 py-2">${t.priority ?? '-'}</td>
+          <td class="px-4 py-2">${formatDate(deadline)}</td>
+          <td class="px-4 py-2">${t.project_name ?? '-'}</td>
+          <td class="px-4 py-2">${t.assigned_to ?? '-'}</td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table>`;
+    tableDiv.innerHTML = html;
+  };
+
+  // Safe download: open new tab / window to trigger CSV download from backend
+  const startCSVDownload = () => {
+    // Use absolute or relative path depending on your app. This opens a new window tab.
+    window.open(API + '?download=csv', '_blank', 'noopener');
+  };
+
+  // Attach click handler safely inside IIFE
+  if (downloadBtn) {
+    downloadBtn.onclick = (e) => {
+      e.preventDefault();
+      startCSVDownload();
+    };
+  }
+
+  // Init
+  (async function init() {
+    tableDiv.innerHTML = '<div class="text-gray-400 p-4">Loading tasks...</div>';
+    const res = await fetchJSON(API);
+    if (res && res.success) {
+      renderTable(res.data || []);
+    } else {
+      const msg = res && res.message ? res.message : 'Failed to load tasks.';
+      tableDiv.innerHTML = `<div class="text-red-400 p-4">${msg}</div>`;
+    }
+  })();
+})();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  logActivity('VIEW_TASKS', 'Viewed tasks tab');
+});
+</script>

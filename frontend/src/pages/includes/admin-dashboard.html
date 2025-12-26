@@ -1,0 +1,181 @@
+<div class="p-6 text-gray-100" id="adminDashboardTab">
+  <h1 class="text-2xl font-semibold mb-6">Company Dashboard Overview</h1>
+
+  <!-- Summary Cards -->
+  <div id="summaryCards" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6"></div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div class="bg-gray-800/80 backdrop-blur-md rounded-2xl p-4 shadow-md">
+      <h2 class="text-lg font-medium mb-2">Users by Role</h2>
+      <div class="h-48"><canvas id="usersByRoleChart"></canvas></div>
+    </div>
+    <div class="bg-gray-800/80 backdrop-blur-md rounded-2xl p-4 shadow-md">
+      <h2 class="text-lg font-medium mb-2">Budget Trend</h2>
+      <div class="h-48"><canvas id="budgetTrendChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Recent Projects -->
+  <div class="bg-gray-800/80 backdrop-blur-md rounded-2xl p-4 shadow-md">
+    <h2 class="text-lg font-medium mb-4">Recent Projects</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="text-gray-300 border-b border-gray-700">
+          <tr>
+            <th class="pb-2">Project</th>
+            <th class="pb-2">Manager</th>
+            <th class="pb-2">Status</th>
+            <th class="pb-2">Deadline</th>
+            <th class="pb-2 text-right">Completion</th>
+          </tr>
+        </thead>
+        <tbody id="recentProjectsTable" class="text-gray-200"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+(async () => {
+  const API_URL = "http://localhost/RemoteTeamPro/backend/api/admin-dashboard.php";
+
+  // Local-scoped cache to prevent multiple chart inits
+  let roleChart = null;
+  let budgetChart = null;
+
+  const fetchJSON = async (url) => {
+    try {
+      const res = await fetch(url);
+      return await res.json();
+    } catch (err) {
+      console.error("Fetch error:", err);
+      return { success: false };
+    }
+  };
+
+  const formatNum = (n) => new Intl.NumberFormat().format(n);
+
+  const renderSummary = (summary) => {
+    const cards = [
+      { label: "Projects", value: summary.total_projects },
+      { label: "Teams", value: summary.total_teams },
+      { label: "Active Users", value: summary.total_active_users },
+      { label: "Budget (₹)", value: formatNum(summary.total_budget) },
+      { label: "Avg Completion", value: `${parseFloat(summary.avg_completion).toFixed(1)}%` },
+    ];
+
+    document.getElementById("summaryCards").innerHTML = cards
+      .map(
+        (c) => `
+        <div class="bg-gray-800/80 backdrop-blur-md p-4 rounded-2xl shadow-md transition hover:bg-gray-700/60">
+          <p class="text-gray-400 text-sm">${c.label}</p>
+          <h3 class="text-xl font-semibold mt-1">${c.value}</h3>
+        </div>`
+      )
+      .join("");
+  };
+
+  const renderRecentProjects = (projects) => {
+    const tbody = document.getElementById("recentProjectsTable");
+    if (!projects || projects.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="py-3 text-center text-gray-500">No recent projects found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = projects
+      .map(
+        (p) => `
+        <tr class="border-b border-gray-700 hover:bg-gray-700/40 transition">
+          <td class="py-2">${p.project_name}</td>
+          <td>${p.manager_name || "-"}</td>
+          <td>${p.status}</td>
+          <td>${p.deadline || "-"}</td>
+          <td class="text-right">${parseFloat(p.completion_percentage).toFixed(1)}%</td>
+        </tr>`
+      )
+      .join("");
+  };
+
+  const renderCharts = (usersByRole, budgetTrend) => {
+    // Destroy any previous charts safely
+    if (roleChart) roleChart.destroy();
+    if (budgetChart) budgetChart.destroy();
+
+    const ctxRole = document.getElementById("usersByRoleChart").getContext("2d");
+    const ctxBudget = document.getElementById("budgetTrendChart").getContext("2d");
+
+    roleChart = new Chart(ctxRole, {
+      type: "doughnut",
+      data: {
+        labels: usersByRole.map((u) => u.role),
+        datasets: [
+          {
+            data: usersByRole.map((u) => u.count),
+            backgroundColor: ["#60a5fa", "#a855f7", "#22c55e", "#f59e0b", "#ef4444"],
+          },
+        ],
+      },
+      options: {
+        plugins: { legend: { labels: { color: "#ddd" } } },
+        responsive: true,
+        maintainAspectRatio: false,
+      },
+    });
+
+    budgetChart = new Chart(ctxBudget, {
+      type: "line",
+      data: {
+        labels: budgetTrend.map((b) => b.month),
+        datasets: [
+          {
+            label: "Budget (₹)",
+            data: budgetTrend.map((b) => b.total),
+            borderColor: "#38bdf8",
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+          },
+        ],
+      },
+      options: {
+        scales: {
+          x: { ticks: { color: "#aaa" }, grid: { color: "rgba(255,255,255,0.05)" } },
+          y: { ticks: { color: "#aaa" }, grid: { color: "rgba(255,255,255,0.05)" } },
+        },
+        plugins: { legend: { labels: { color: "#ddd" } } },
+        responsive: true,
+        maintainAspectRatio: false,
+      },
+    });
+  };
+
+  const init = async () => {
+    const res = await fetchJSON(API_URL);
+    if (!res.success || !res.data) {
+      document.getElementById("adminDashboardTab").innerHTML =
+        `<p class='text-center text-gray-400 mt-10'>Unable to load dashboard data.</p>`;
+      return;
+    }
+
+    const { summary, users_by_role, budget_trend, recent_projects } = res.data;
+    renderSummary(summary);
+    renderRecentProjects(recent_projects);
+    renderCharts(users_by_role, budget_trend);
+  };
+
+  await init();
+
+  // Cleanup when tab is destroyed
+  document.addEventListener("tab:unload", () => {
+    if (roleChart) roleChart.destroy();
+    if (budgetChart) budgetChart.destroy();
+  });
+})();
+logActivity('VIEW_DASHBOARD', 'Visited Dashboard page');
+
+</script>
+

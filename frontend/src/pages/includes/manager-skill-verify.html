@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Employee Skill Verification</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans">
+
+  <main class="max-w-6xl mx-auto p-8 fade-in">
+    <section class="bg-gray-900 bg-opacity-50 backdrop-blur-lg border border-gray-800 p-6 rounded-2xl shadow-xl">
+      <header class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold flex items-center gap-2 text-white">
+          <i class="fas fa-user-check text-green-400"></i>
+          Employee Skill Verification
+        </h2>
+        <select id="statusFilter" class="bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-700 focus:ring-2 focus:ring-green-500">
+          <option value="all">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Verified">Verified</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </header>
+
+      <!-- Skills Verification Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead class="text-green-400 border-b border-gray-800 uppercase text-sm">
+            <tr>
+              <th class="py-3 px-3">Employee</th>
+              <th class="py-3 px-3">Skill</th>
+              <th class="py-3 px-3">Level</th>
+              <th class="py-3 px-3">Status</th>
+              <th class="py-3 px-3 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="verificationTable" class="text-gray-300 text-sm"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  (async () => {
+    const API_BASE = '/RemoteTeamPro/backend/api/skills';
+    const fetchJSON = async (url, opt = {}) => {
+      const res = await fetch(url, opt);
+      return res.json();
+    };
+
+    const tableBody = document.getElementById('verificationTable');
+    const statusFilter = document.getElementById('statusFilter');
+
+    const loadSkills = async (status = 'all') => {
+      const data = await fetchJSON(`${API_BASE}/manager-skill-verify.php?action=list&status=${encodeURIComponent(status)}`);
+      if (!Array.isArray(data) || !data.length) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-500">No skills found</td></tr>`;
+        return;
+      }
+
+      tableBody.innerHTML = data.map(s => `
+        <tr class="border-b border-gray-800 hover:bg-gray-800/40 transition">
+          <td class="py-3 px-3">${escapeHtml(s.employee_name)}</td>
+          <td class="py-3 px-3">${escapeHtml(s.skill_name)}</td>
+          <td class="py-3 px-3">${escapeHtml(s.proficiency_level || '')}</td>
+          <td class="py-3 px-3 font-medium ${
+            s.verification_status === 'Verified' ? 'text-green-400' :
+            s.verification_status === 'Rejected' ? 'text-red-400' :
+            'text-yellow-400'
+          }">${escapeHtml(s.verification_status || 'Pending')}</td>
+          <td class="py-3 px-3 text-center">
+            ${
+              s.verification_status === 'Pending'
+                ? `
+                  <button data-id="${s.user_skill_id}" data-action="approve" class="approveBtn bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-xs mx-1 transition">
+                    <i class="fas fa-check"></i> Approve
+                  </button>
+                  <button data-id="${s.user_skill_id}" data-action="reject" class="rejectBtn bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-xs mx-1 transition">
+                    <i class="fas fa-times"></i> Reject
+                  </button>
+                `
+                : '<span class="text-gray-500 italic">—</span>'
+            }
+          </td>
+        </tr>
+      `).join('');
+    };
+
+    function escapeHtml(s) {
+      if (!s && s !== 0) return '';
+      return String(s).replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    statusFilter.onchange = async () => {
+      await loadSkills(statusFilter.value);
+    };
+
+    tableBody.onclick = async (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      const confirmMsg = action === 'approve' ? 'Approve this skill?' : 'Reject this skill?';
+      if (!confirm(confirmMsg)) return;
+
+      const res = await fetchJSON(`${API_BASE}/manager-skill-verify.php?action=${encodeURIComponent(action)}&id=${encodeURIComponent(id)}`);
+      alert(res.message || (res.status === 'success' ? 'Updated' : 'Error'));
+      await loadSkills(statusFilter.value);
+    };
+
+    await loadSkills();
+  })();
+  </script>
+
+</body>
+</html>

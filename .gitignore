@@ -1,0 +1,41 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# PHP / Composer
+/vendor/
+composer.phar
+
+# Uploads and generated files
+/uploads/
+/logs/
+/backend/logs/
+
+# Configuration and secrets (do NOT commit credentials)
+/config/*.php
+.env
+.env.*
+
+# OTP app local libraries (if using bundled PHPMailer)
+otp_app/php/PHPMailer/
+
+# Cache, sessions, logs
+/cache/
+/tmp/
+*.log
+*.cache
+
+# Build / dependency folders
+node_modules/
+
+# Backup / swap files
+*.bak
+*.swp
+*~
+
+# Ignore vendor autoload and other large generated files
+vendor/autoload.php

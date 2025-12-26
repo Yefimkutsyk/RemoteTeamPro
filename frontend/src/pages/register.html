@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>RemoteTeamPro - Register</title>
+ <script src="https://cdn.tailwindcss.com"></script> <link rel="icon" type="image/png" href="../assets/images/index/favicon.png">
+
+ <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet"/>
+ <script src="https://unpkg.com/lucide@latest"></script>
+ <style>
+ body {
+ font-family: 'Manrope', sans-serif;
+ margin: 0;
+ padding: 0;
+ overflow-x: hidden; /* Prevent horizontal scroll */
+ /* Background Gradient: Creating a sophisticated, ethereal background with radial gradients for visual depth. */
+ background: radial-gradient(
+ circle at 30% 40%,
+ rgba(100, 0, 180, 0.3),
+ transparent 35%
+ ),
+ radial-gradient(
+ circle at 60% 60%,
+ rgba(150, 0, 200, 0.3),
+ transparent 35%
+ ),
+ radial-gradient(
+ circle at 70% 30%,
+ rgba(50, 0, 180, 0.25),
+ transparent 35%
+ ),
+ #0a0a0a; /* Base Dark Tone: A very dark gray, serving as the background fallback */
+ background-size: cover;
+ background-repeat: no-repeat;
+ background-attachment: fixed;
+ min-height: 100vh;
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ box-sizing: border-box;
+ color: #e2e8f0; /* Light text color for overall body */
+ }
+ @keyframes gradientMove {
+ 0% {background-position: 0% 50%;}
+ 50% {background-position: 100% 50%;}
+ 100% {background-position: 0% 50%;}
+ }
+ .app-container-glass {
+ background: rgba(0,0,0,0.45);
+ border-radius: 1.25rem;
+ padding: 40px;
+ backdrop-filter: blur(12px);
+ width: 100%;
+ max-width: 1400px;
+ box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+ }
+ .form-input {
+ width: 100%;
+ padding: 14px 18px;
+ border-radius: 10px;
+ border: 1px solid rgba(255,255,255,0.15);
+ background-color: rgba(26,32,44,0.6);
+ color: #e2e8f0;
+ }
+ .form-input:focus {
+ border-color:#8B5CF6;
+ box-shadow: 0 0 0 4px rgba(139,92,246,0.25);
+ outline:none;
+ }
+ .cta-button {
+ background-color:#8B5CF6;
+ color:white;
+ padding:14px 28px;
+ border-radius:10px;
+ font-weight:600;
+ width:100%;
+ transition:.2s;
+ }
+ .cta-button:hover {
+ background-color:#7C3AED;
+ transform:translateY(-3px);
+ }
+ /* Role Card */
+ .role-card {
+ border-radius: 16px;
+ overflow: hidden;
+ cursor: pointer;
+ display: flex;
+ flex-direction: column;
+ transition: all .4s ease;
+ border: 2px solid transparent;
+ background: #111;
+ }
+ .role-card:hover {
+ transform: translateY(-5px);
+ box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+ }
+ .role-card.highlighted {
+ border: 2px solid #8B5CF6;
+ box-shadow: 0 0 15px rgba(139,92,246,0.6);
+ }
+ .role-top {
+ padding: 1.5rem;
+ flex: 1;
+ }
+ .badge {
+ display: inline-flex;
+ align-items: center;
+ font-size: .75rem;
+ font-weight: 600;
+ padding: 4px 10px;
+ border-radius: 9999px;
+ margin-bottom: .75rem;
+ }
+ .badge.white { color: white; background: rgba(255,255,255,0.2); }
+ .badge.black {
+ color: #111; /* dark text */
+ background: rgba(0,0,0,0.15); /* subtle dark translucent bg */
+ border: 1px solid rgba(79, 77, 77, 0.067);
+}
+
+ 
+ .role-bottom {
+ position: relative;
+ height: 140px;
+ background-size: cover;
+ background-position: center;
+ }
+ /* Details section */
+ .role-details {
+ max-height: 0;
+ opacity: 0;
+ overflow: hidden;
+ transition: all .4s ease;
+ background: #111827;
+ color: #e5e7eb;
+ padding: 0 1.25rem;
+ }
+ .role-card:hover .role-details {
+ max-height: 300px;
+ opacity: 1;
+ padding: 1rem 1.25rem;
+ }
+ /* OTP Section animation */
+#otp-section {
+ max-height: 0;
+ opacity: 0;
+ overflow: hidden;
+ padding: 0; /* start with no padding */
+ transition: all 0.5s ease;
+}
+#otp-section.show {
+ max-height: 300px;
+ opacity: 1;
+ padding: 1.5rem; /* = p-6 */
+}
+
+
+ </style>
+</head>
+<body>
+ <div class="app-container-glass">
+ <div class="text-center mb-8">
+ <h2 class="text-4xl font-extrabold text-white mb-2">Join RemoteTeamPro!</h2>
+ <p class="text-lg text-gray-400">Streamline your remote work. Get started today.</p>
+ </div>
+
+ <form id="registerForm" class="space-y-8">
+ <div class="bg-gray-800 bg-opacity-40 p-6 rounded-lg">
+ <h3 class="text-xl font-bold text-white mb-4">Your Personal Details</h3>
+ <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+ <div>
+ <label class="block text-sm text-gray-300 mb-2">First Name</label>
+ <input type="text" id="first_name" class="form-input" required>
+ </div>
+ <div>
+ <label class="block text-sm text-gray-300 mb-2">Last Name</label>
+ <input type="text" id="last_name" class="form-input" required>
+ </div>
+ <div class="md:col-span-2">
+ <label class="block text-sm text-gray-300 mb-2">Email</label>
+ <input type="email" id="email" class="form-input" required>
+ </div>
+ <div class="md:col-span-2">
+ <label class="block text-sm text-gray-300 mb-2">Password</label>
+ <div class="relative">
+ <input type="password" id="password" class="form-input pr-10" required>
+ <button type="button" id="togglePassword" 
+ class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-white">
+ <i data-lucide="eye"></i>
+ </button>
+</div>
+
+ </div>
+ </div>
+ </div>
+
+ <div class="bg-gray-800 bg-opacity-40 p-6 rounded-lg">
+ <h3 class="text-xl font-bold text-white mb-4">Company & Role</h3>
+ <div class="space-y-6">
+ <div>
+ <label class="block text-sm text-gray-300 mb-2">Company ID</label>
+ <input type="number" id="company_id" class="form-input" required placeholder="e.g., 123">
+ </div>
+
+ <div>
+ <label class="block text-sm text-gray-300 mb-4">What best describes your primary role?</label>
+ <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+
+ <div id="admin-card" class="role-card" data-role="Admin">
+ <div class="role-top" style="background:#A0FF40; color:#111;">
+ <div class="flex justify-between items-center">
+ <span class="badge black">Full Control</span>
+ <i data-lucide="settings" class="w-4 h-4"></i>
+ </div>
+ <h3 class="text-2xl font-extrabold mt-2">Admin</h3>
+ <p class="text-sm mt-2">Comprehensive system oversight and control.</p>
+ </div>
+ <div class="role-bottom" style="background-image:url('https://images.unsplash.com/photo-1622151834677-70f982c9adef?q=80&w=600');"></div>
+ <div class="role-details">
+ <ul class="list-disc pl-4 text-sm space-y-1">
+ <li>Manage all users and permissions</li>
+ <li>Access analytics & reports</li>
+ <li>Full system configuration</li>
+ </ul>
+ </div>
+ </div>
+
+ <div id="manager-card" class="role-card" data-role="Manager">
+ <div class="role-top" style="background:#8A2BE2; color:white;">
+ <div class="flex justify-between items-center">
+ <span class="badge white">Team Lead</span>
+ <i data-lucide="users" class="w-4 h-4"></i>
+ </div>
+ <h3 class="text-2xl font-extrabold mt-2">Manager</h3>
+ <p class="text-sm mt-2">Lead teams, manage projects, and oversee progress.</p>
+ </div>
+ <div class="role-bottom" style="background-image:url('https://images.unsplash.com/photo-1690383922009-477ea4edc20d?q=80&w=600');"></div>
+ <div class="role-details">
+ <ul class="list-disc pl-4 text-sm space-y-1">
+ <li>Assign, track, and monitor tasks</li>
+ <li>Comprehensive project tools</li>
+ <li>Facilitate client communication</li>
+ </ul>
+ </div>
+ </div>
+
+ <div id="employee-card" class="role-card" data-role="Employee">
+ <div class="role-top" style="background:#F5F5DC; color:#111;">
+ <div class="flex justify-between items-center">
+ <span class="badge black">Team Member</span>
+ <i data-lucide="briefcase" class="w-4 h-4"></i>
+ </div>
+ <h3 class="text-2xl font-extrabold mt-2">Employee</h3>
+ <p class="text-sm mt-2">Focus on tasks, track time, and collaborate efficiently.</p>
+ </div>
+ <div class="role-bottom" style="background-image:url('https://images.unsplash.com/photo-1603202662747-00e33e7d1468?q=80&w=600');"></div>
+ <div class="role-details">
+ <ul class="list-disc pl-4 text-sm space-y-1">
+ <li>Complete assigned tasks</li>
+ <li>Collaborate with team</li>
+ <li>Track personal progress</li>
+ </ul>
+ </div>
+ </div>
+
+ <div id="client-card" class="role-card" data-role="Client">
+ <div class="role-top" style="background:#008080; color:white;">
+ <div class="flex justify-between items-center">
+ <span class="badge white">Stakeholder</span>
+ <i data-lucide="file-text" class="w-4 h-4"></i>
+ </div>
+ <h3 class="text-2xl font-extrabold mt-2">Client</h3>
+ <p class="text-sm mt-2">Monitor project status and engage with your team.</p>
+ </div>
+ <div class="role-bottom" style="background-image:url('https://images.unsplash.com/photo-1713946598417-437a1fccf2c6?q=80&w=600');"></div>
+ <div class="role-details">
+ <ul class="list-disc pl-4 text-sm space-y-1">
+ <li>View project updates</li>
+ <li>Download reports</li>
+ <li>Communicate with managers</li>
+ </ul>
+ </div>
+ </div>
+
+ </div>
+ </div>
+
+ <div>
+ <label class="block text-sm text-gray-300 mb-2">Confirmed Role</label>
+ <select id="role" class="form-input bg-gray-900 text-gray-200"> <option value="">Select your role</option>
+ <option value="Admin">Admin</option>
+ <option value="Manager">Manager</option>
+ <option value="Employee">Employee</option>
+ <option value="Client">Client</option>
+ </select>
+ </div>
+
+ <div id="admin-key-container" style="display:none;">
+ <label for="admin_key" class="block text-sm text-gray-300 mb-2">Admin Key</label>
+ <input type="password" id="admin_key" class="form-input" placeholder="Enter secure admin key">
+ <p class="text-xs text-gray-400 mt-1">Required only if registering as Admin.</p>
+ </div>
+ </div>
+ </div>
+ <div id="message" class="text-center text-sm font-medium pt-2 text-white"></div>
+ <button type="submit" id="register-button" class="cta-button text-lg font-semibold">Register Account</button>
+ </form>
+
+ <p class="mt-8 text-center text-base text-gray-400">Already have an account? 
+ <a href="login.html" class="font-bold text-purple-400 hover:text-purple-300">Login here</a>
+ </p>
+ </div>
+
+ <script>
+ // Password visibility toggle
+ const passwordInput = document.getElementById("password");
+ const togglePassword = document.getElementById("togglePassword");
+ let maskTimeout;
+
+ passwordInput.addEventListener("input", () => {
+ clearTimeout(maskTimeout);
+ if (passwordInput.type === "password") {
+ passwordInput.type = "text";
+ }
+ maskTimeout = setTimeout(() => {
+ if (!togglePassword.classList.contains("active")) {
+ passwordInput.type = "password";
+ }
+ }, 1000); // show last typed char for 1s
+ });
+
+ togglePassword.addEventListener("click", () => {
+ if (passwordInput.type === "password") {
+ passwordInput.type = "text";
+ togglePassword.innerHTML = `<i data-lucide="eye-off"></i>`;
+ togglePassword.classList.add("active");
+ } else {
+ passwordInput.type = "password";
+ togglePassword.innerHTML = `<i data-lucide="eye"></i>`;
+ togglePassword.classList.remove("active");
+ }
+ lucide.createIcons();
+ });
+
+ lucide.createIcons();
+
+ let selectedRole = '';
+
+ function toggleAdminKey(role) {
+ document.getElementById('admin-key-container').style.display = (role === 'Admin') ? 'block' : 'none';
+ }
+
+ document.querySelectorAll('.role-card').forEach(card => {
+ card.addEventListener('click', function() {
+ document.querySelectorAll('.role-card').forEach(c => c.classList.remove('highlighted'));
+ this.classList.add('highlighted');
+ selectedRole = this.dataset.role;
+ document.getElementById('role').value = selectedRole;
+ toggleAdminKey(selectedRole);
+ });
+ });
+
+ document.getElementById('role').addEventListener('change', function() {
+ toggleAdminKey(this.value);
+ });
+
+ // Initialize registration form
+ const form = document.getElementById('registerForm');
+ const msg = document.getElementById('message');
+ const registerBtn = document.getElementById('register-button');
+ 
+ form.addEventListener('submit', async function(e) {
+ e.preventDefault();
+ 
+ // Set loading state
+ setRegisterButtonLoading(true);
+ msg.textContent = '';
+ msg.classList.remove('text-red-500', 'text-green-400');
+ 
+ // Safety timeout to reset loading state after 10 seconds
+ const loadingTimeout = setTimeout(() => {
+ console.log('Loading timeout - resetting button state');
+ setRegisterButtonLoading(false);
+ }, 10000);
+
+ const data = {
+ company_id: document.getElementById('company_id').value,
+ first_name: document.getElementById('first_name').value,
+ last_name: document.getElementById('last_name').value,
+ email: document.getElementById('email').value,
+ password: document.getElementById('password').value,
+ role: document.getElementById('role').value,
+ admin_key: document.getElementById('admin_key')?.value || null
+ };
+
+ // Enhanced validation
+ if (!data.company_id || !data.first_name || !data.last_name || !data.email || !data.password || !data.role) {
+ msg.textContent = 'Please fill all required fields.'; 
+ msg.classList.add('text-red-500'); 
+ setRegisterButtonLoading(false); 
+ return;
+ }
+
+ // Email format validation
+ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+ if (!emailRegex.test(data.email)) {
+ msg.textContent = 'Please enter a valid email address.'; 
+ msg.classList.add('text-red-500'); 
+ setRegisterButtonLoading(false); 
+ return;
+ }
+
+ // Password strength validation
+ if (data.password.length < 8) {
+ msg.textContent = 'Password must be at least 8 characters long.'; 
+ msg.classList.add('text-red-500'); 
+ setRegisterButtonLoading(false); 
+ return;
+ }
+
+ // Admin key validation for Admin role
+ if (data.role === 'Admin' && !data.admin_key) {
+ msg.textContent = 'Admin key is required for Admin role.'; 
+ msg.classList.add('text-red-500'); 
+ setRegisterButtonLoading(false); 
+ return;
+ }
+
+ try {
+ console.log('Sending registration request:', data);
+ 
+ // Create AbortController for timeout
+ const controller = new AbortController();
+ const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+ 
+ const res = await fetch('/RemoteTeamPro/backend/api/auth/register.php', {
+ method: 'POST',
+ credentials: 'include',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify(data),
+ signal: controller.signal
+ });
+ 
+ // Clear the timeout since we got a response
+ clearTimeout(timeoutId);
+ 
+ console.log('Response status:', res.status);
+ console.log('Response headers:', res.headers);
+ 
+ const json = await res.json();
+ console.log('Response JSON:', json);
+ console.log('Response OK:', res.ok);
+ console.log('JSON Success:', json.success);
+ 
+ // Clear the timeout since we got a response
+ clearTimeout(loadingTimeout);
+ 
+ if (!res.ok || !json.success) {
+ console.log('Handling error case');
+ msg.textContent = json.message || 'Registration failed. Please try again.'; 
+ msg.classList.add('text-red-500'); 
+ setRegisterButtonLoading(false); 
+ return;
+ }
+ 
+ console.log('Handling success case');
+ 
+ // Reset loading state for success case too
+ setRegisterButtonLoading(false);
+ 
+ msg.textContent = json.message || 'Registered successfully! Please verify your email.'; 
+ msg.classList.add('text-green-400');
+ 
+ // Store email in localStorage for verification page
+ localStorage.setItem('registrationEmail', data.email);
+ 
+ // If email failed, show OTP for manual entry (for testing)
+ if (!json.email_sent && json.otp) {
+ console.log('Email failed, OTP for manual entry:', json.otp);
+ msg.textContent += ` (OTP: ${json.otp})`;
+ }
+ 
+ // Redirect to OTP verification page
+ setTimeout(() => {
+ window.location.href = `verify-registration-otp.html?email=${encodeURIComponent(data.email)}`;
+ }, 1500);
+ } catch (err) {
+ console.error('Registration error:', err);
+ console.error('Error details:', err.message);
+ 
+ // Clear the timeout since we got an error
+ clearTimeout(loadingTimeout);
+ 
+ let errorMessage = 'Network error. Please check your connection and try again.';
+ if (err.name === 'AbortError') {
+ errorMessage = 'Request timed out. Please try again.';
+ } else if (err.name === 'TypeError' && err.message.includes('fetch')) {
+ errorMessage = 'Cannot connect to server. Please check if the server is running.';
+ }
+ 
+ msg.textContent = errorMessage; 
+ msg.classList.add('text-red-500'); 
+ setRegisterButtonLoading(false);
+ }
+ });
+
+ // Function to set loading state for register button
+ function setRegisterButtonLoading(loading) {
+ const button = document.getElementById('register-button');
+ if (loading) {
+ button.disabled = true;
+ button.innerHTML = `
+ <div class="flex items-center justify-center">
+ <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+ Registering...
+ </div>
+ `;
+ button.classList.add('opacity-75', 'cursor-not-allowed');
+ } else {
+ button.disabled = false;
+ button.innerHTML = 'Register';
+ button.classList.remove('opacity-75', 'cursor-not-allowed');
+ }
+ }
+
+ // Email change simulation (for OTP demo)
+ function showOTPVerificationModal(email) {
+ alert(`OTP sent to ${email}. (Demo: No real OTP sent)`);
+ }
+
+ // Example function to trigger email change and OTP
+ function changeEmailDemo() {
+	const newEmail = prompt("Enter new email for OTP demo:", "examplemail@mail.com");
+ if (newEmail) {
+ fetch('/backend/api/auth/change-email.php', {
+ method: 'POST',
+ headers: {
+ 'Content-Type': 'application/json'
+ },
+ body: JSON.stringify({
+ new_email: newEmail
+ }),
+ credentials: 'include' // Important for session handling
+ })
+ .then(response => response.json())
+ .then(data => {
+ if (data.success) {
+ // Show OTP input form
+ showOTPVerificationModal(data.email);
+ } else {
+ // Handle error
+ showError(data.message);
+ }
+ });
+ }
+ }
+
+ // Uncomment to run email change demo on page load
+ // changeEmailDemo();
+
+ // OTP Verification (Email Change)
+ function verifyEmailChangeDemo() {
+ fetch('/backend/api/auth/verify-email-change.php', {
+ method: 'POST',
+ headers: {
+ 'Content-Type': 'application/json'
+ },
+	body: JSON.stringify({
+	email: 'examplemail@mail.com',
+	otp: '123456'
+	}),
+ credentials: 'include' // Important for session handling
+ })
+ .then(response => response.json())
+ .then(data => {
+ if (data.success) {
+ // Email change successful
+ showSuccess(data.message);
+ } else {
+ // Handle error
+ showError(data.message);
+ }
+ });
+ }
+
+ // Uncomment to run email verification demo
+ // verifyEmailChangeDemo();
+</script>
+
+</body>
+</html>

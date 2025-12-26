@@ -1,0 +1,152 @@
+<!-- admin-contact-requests.html (renamed from contact-requests.html for admin dashboard modular includes)
+     All backend API endpoints and features preserved. -->
+<div class="card bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+  <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Contact Requests</h2>
+  <div id="contact-requests-container" class="overflow-x-auto">
+    <table class="min-w-full text-sm text-left text-gray-700 dark:text-gray-300">
+      <thead class="bg-gray-100 dark:bg-gray-700">
+        <tr>
+          <th class="px-4 py-3">ID</th>
+          <th class="px-4 py-3">Name</th>
+          <th class="px-4 py-3">Email</th>
+          <th class="px-4 py-3">Topic</th>
+          <th class="px-4 py-3">Message</th>
+          <th class="px-4 py-3">Date</th>
+        </tr>
+      </thead>
+      <tbody id="contact-requests-body" class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+        <tr>
+          <td colspan="6" class="px-4 py-6 text-center text-slate-400">
+            <i class="fas fa-spinner fa-spin mr-2"></i> Loading contact requests…
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+// Function to initialize the contact requests
+function initContactRequests() {
+    console.log('Contact requests page loaded');
+    fetchContactRequests();
+}
+
+// Call initContactRequests when the script loads
+initContactRequests();
+
+// Also set up event listener for dynamic loading
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('contact-requests-body')) {
+        initContactRequests();
+    }
+});
+
+// Handle dynamic content loading if needed
+document.addEventListener('contentLoaded', function(e) {
+    if (e.detail && e.detail.id === 'admin-contact-requests') {
+        initContactRequests();
+    }
+});
+
+function fetchContactRequests() {
+    const loadingMessage = document.getElementById('contact-requests-body');
+    loadingMessage.innerHTML = `
+        <tr>
+            <td colspan="6" class="px-4 py-6 text-center text-slate-400">
+                <i class="fas fa-spinner fa-spin mr-2"></i> Loading contact requests...
+            </td>
+        </tr>`;
+
+    // Use absolute path to the API
+    const apiUrl = '/RemoteTeamPro/backend/api/get_contact_requests.php';
+    console.log('Fetching from URL:', apiUrl);
+    
+    fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json().then(data => {
+                console.log('Response data:', data);
+                return data;
+            });
+        })
+        .then(data => {
+            if (data.success) {
+                console.log('Displaying contact requests:', data.data);
+                if (!Array.isArray(data.data)) {
+                    console.error('Data is not an array:', data.data);
+                    throw new Error('Invalid data format received');
+                }
+                displayContactRequests(data.data);
+            } else {
+                console.error('API Error:', data.message, data.debug || '');
+                showError(data.message || 'Failed to load contact requests');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            showError('Error: ' + error.message);
+        });
+}
+
+function displayContactRequests(requests) {
+    console.log('Displaying requests:', requests);
+    const tbody = document.getElementById('contact-requests-body');
+    
+    if (!requests || requests.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="px-4 py-6 text-center text-slate-400">
+                    No contact requests found
+                </td>
+            </tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = requests.map(request => `
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+            <td class="px-4 py-3">${escapeHtml(request.id)}</td>
+            <td class="px-4 py-3">${escapeHtml(request.name)}</td>
+            <td class="px-4 py-3">${escapeHtml(request.email)}</td>
+            <td class="px-4 py-3">${escapeHtml(request.topic)}</td>
+            <td class="px-4 py-3">
+                <div class="max-w-md">
+                    <p class="text-gray-600 dark:text-gray-400 truncate">${escapeHtml(request.message)}</p>
+                </div>
+            </td>
+            <td class="px-4 py-3">${formatDate(request.date)}</td>
+        </tr>
+    `).join('');
+}
+
+function showError(message) {
+    const tbody = document.getElementById('contact-requests-body');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="5" class="px-4 py-6 text-center text-red-400">
+                <i class="fas fa-exclamation-circle mr-2"></i> ${escapeHtml(message)}
+            </td>
+        </tr>`;
+}
+
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+</script>

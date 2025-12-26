@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 p-6">
+
+  <h1 class="text-3xl font-bold mb-6 text-white text-center">Client Dashboard</h1>
+
+  <div class="grid md:grid-cols-2 gap-6">
+    <!-- Request Status -->
+    <div class="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/10 hover:border-indigo-400/30 transition-all duration-300">
+      <h3 class="text-lg font-semibold text-indigo-300 mb-3">Project Request Status</h3>
+      <canvas id="requestStatusChart" height="240"></canvas>
+    </div>
+
+    <!-- Requests Over Time -->
+    <div class="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/10 hover:border-indigo-400/30 transition-all duration-300">
+      <h3 class="text-lg font-semibold text-indigo-300 mb-3">Requests Over Time</h3>
+      <canvas id="requestTrendChart" height="240"></canvas>
+    </div>
+  </div>
+
+  <script>
+  (async () => {
+    const API_BASE = "/RemoteTeamPro/backend/api";
+
+    const fetchJSON = async (url) => {
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          credentials: "same-origin", // ✅ safer for internal dashboard sessions
+          headers: { "Accept": "application/json" }
+        });
+
+        // if PHP sends invalid JSON or HTML error
+        const text = await response.text();
+        try {
+          return JSON.parse(text);
+        } catch {
+          console.warn("Non-JSON response:", text.slice(0, 80));
+          return { error: "Unauthorized or session expired" };
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+        return { error: "Network issue or session lost" };
+      }
+    };
+
+    const renderCharts = (data) => {
+      const statusCanvas = document.getElementById("requestStatusChart");
+      const trendCanvas = document.getElementById("requestTrendChart");
+
+      if (!data || data.error) {
+        console.error(data?.error);
+        const msg = document.createElement("div");
+        msg.className = "text-center text-red-400 mt-8";
+        msg.innerText = data.error || "Unauthorized Access. Please log in again.";
+        document.body.appendChild(msg);
+        return;
+      }
+
+      const statusChart = new Chart(statusCanvas, {
+        type: "doughnut",
+        data: {
+          labels: ["Approved", "Pending", "Rejected"],
+          datasets: [{
+            data: [data.stats.approved, data.stats.pending, data.stats.rejected],
+            backgroundColor: ["#34d399", "#facc15", "#f87171"],
+            borderWidth: 1
+          }]
+        },
+        options: { plugins: { legend: { labels: { color: "#fff" } } } }
+      });
+
+      const trendChart = new Chart(trendCanvas, {
+        type: "line",
+        data: {
+          labels: data.requests.map(r => r.week_label),
+          datasets: [{
+            label: "Requests",
+            data: data.requests.map(r => r.request_count),
+            borderColor: "#818cf8",
+            backgroundColor: "rgba(129,140,248,0.3)",
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          scales: {
+            x: { ticks: { color: "#fff" } },
+            y: { beginAtZero: true, ticks: { color: "#fff" } }
+          },
+          plugins: { legend: { labels: { color: "#fff" } } }
+        }
+      });
+
+      // 🧹 Cleanup when tab is removed
+      document.addEventListener("tab:unload", () => {
+        statusChart.destroy();
+        trendChart.destroy();
+      }, { once: true });
+    };
+
+    const data = await fetchJSON(`${API_BASE}/client-dashboard.php`);
+    renderCharts(data);
+  })();
+  </script>
+</body>
+</html>

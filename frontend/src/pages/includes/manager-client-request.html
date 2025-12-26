@@ -1,0 +1,50 @@
+<!-- includes/manager-client-request.html -->
+<div class="card max-w-2xl mx-auto mt-8 p-6 shadow-lg rounded-2xl bg-gradient-to-br from-white/5 to-blue-900/10 border border-blue-400/20">
+  <h2 class="text-2xl font-bold mb-4 text-blue-700">Request a New Project</h2>
+  <form id="clientProjectRequestForm" class="space-y-4">
+    <div>
+      <label class="block text-sm font-semibold mb-1">Project Title</label>
+      <input name="subject" class="input w-full" required placeholder="Enter project title">
+    </div>
+    <div>
+      <label class="block text-sm font-semibold mb-1">Description</label>
+      <textarea name="description" class="input w-full" rows="4" required placeholder="Describe your project..."></textarea>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold mb-1">Preferred Start Date</label>
+      <input type="date" name="start_date" class="input w-full" required>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold mb-1">Required Skills</label>
+      <input name="skills" class="input w-full" placeholder="e.g. PHP, JavaScript, Design" required>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button type="submit" class="btn btn-indigo">Submit Request</button>
+    </div>
+  </form>
+  <div id="clientProjectRequestMsg" class="mt-4 text-center"></div>
+</div>
+
+<script>
+document.getElementById('clientProjectRequestForm').onsubmit = async function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const payload = Object.fromEntries(new FormData(form).entries());
+  const res = await fetch('/RemoteTeamPro/backend/api/client-project-request.php', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const json = await res.json();
+  const msg = document.getElementById('clientProjectRequestMsg');
+  if (json.success) {
+    msg.textContent = 'Project request submitted successfully!';
+    msg.className = 'text-green-600 mt-4';
+    form.reset();
+  } else {
+    msg.textContent = json.message || 'Failed to submit request.';
+    msg.className = 'text-red-600 mt-4';
+  }
+};
+</script>

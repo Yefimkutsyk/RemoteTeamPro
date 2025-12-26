@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manager Dashboard</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 p-6">
+
+  <h1 class="text-3xl font-bold mb-6 text-white text-center">Manager Dashboard</h1>
+
+  <div class="grid md:grid-cols-3 gap-6">
+
+    <!-- Task Status -->
+    <div class="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/10 hover:border-indigo-400/30 transition-all duration-300">
+      <h3 class="text-lg font-semibold text-indigo-300 mb-3">Task Status</h3>
+      <canvas id="taskStatusChart" height="220"></canvas>
+    </div>
+
+    <!-- Project Progress -->
+    <div class="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/10 hover:border-indigo-400/30 transition-all duration-300">
+      <h3 class="text-lg font-semibold text-indigo-300 mb-3">Project Progress</h3>
+      <canvas id="projectProgressChart" height="220"></canvas>
+    </div>
+
+    <!-- Team Performance -->
+    <div class="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/10 hover:border-indigo-400/30 transition-all duration-300">
+      <h3 class="text-lg font-semibold text-indigo-300 mb-3">Team Performance</h3>
+      <canvas id="teamPerformanceChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <!-- Self-contained script -->
+  <script>
+  (async () => {
+    const API_BASE = "/RemoteTeamPro/backend/api";
+
+    // 🔧 Fetch helper
+    const fetchJSON = async (url, opt = {}) => {
+      try {
+        const res = await fetch(url, opt);
+        return await res.json();
+      } catch (err) {
+        console.error("Fetch error:", err);
+        return {};
+      }
+    };
+
+    // 🎨 Elements
+    const taskStatusCanvas = document.getElementById("taskStatusChart");
+    const projectProgressCanvas = document.getElementById("projectProgressChart");
+    const teamPerformanceCanvas = document.getElementById("teamPerformanceChart");
+
+    // 💾 Local Chart instances
+    let taskStatusChart, projectProgressChart, teamPerformanceChart;
+
+    // 🎨 Render all charts
+    const renderCharts = (data) => {
+      if (!data) return;
+
+      // 1️⃣ Task Status Pie
+      if (taskStatusChart) taskStatusChart.destroy();
+      taskStatusChart = new Chart(taskStatusCanvas, {
+        type: "pie",
+        data: {
+          labels: ["Completed", "In Progress", "Pending"],
+          datasets: [{
+            data: [
+              data.taskStatus.completed,
+              data.taskStatus.in_progress,
+              data.taskStatus.pending
+            ],
+            backgroundColor: ["#22c55e", "#3b82f6", "#f43f5e"],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: "#fff" } }
+          }
+        }
+      });
+
+      // 2️⃣ Project Progress Bar
+      if (projectProgressChart) projectProgressChart.destroy();
+      projectProgressChart = new Chart(projectProgressCanvas, {
+        type: "bar",
+        data: {
+          labels: data.projectProgress.map(p => p.project_name),
+          datasets: [{
+            label: "Completion %",
+            data: data.projectProgress.map(p => p.completion_percentage),
+            backgroundColor: "#818cf8",
+            borderRadius: 8
+          }]
+        },
+        options: {
+          scales: {
+            x: { ticks: { color: "#fff" } },
+            y: { beginAtZero: true, max: 100, ticks: { color: "#fff" } }
+          },
+          plugins: {
+            legend: { labels: { color: "#fff" } }
+          }
+        }
+      });
+
+      // 3️⃣ Team Performance Line
+      if (teamPerformanceChart) teamPerformanceChart.destroy();
+      teamPerformanceChart = new Chart(teamPerformanceCanvas, {
+        type: "line",
+        data: {
+          labels: data.teamPerformance.map(w => w.week_label),
+          datasets: [{
+            label: "Tasks Completed",
+            data: data.teamPerformance.map(w => w.tasks_completed),
+            borderColor: "#34d399",
+            backgroundColor: "rgba(52,211,153,0.3)",
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          scales: {
+            x: { ticks: { color: "#fff" } },
+            y: { beginAtZero: true, ticks: { color: "#fff" } }
+          },
+          plugins: {
+            legend: { labels: { color: "#fff" } }
+          }
+        }
+      });
+    };
+
+    // 🚀 Init
+    await (async function init() {
+      const data = await fetchJSON(`${API_BASE}/manager-dashboard.php`);
+      renderCharts(data);
+    })();
+  })();
+  </script>
+</body>
+</html>

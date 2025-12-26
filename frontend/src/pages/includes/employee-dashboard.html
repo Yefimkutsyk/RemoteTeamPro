@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Dashboard</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 p-6">
+
+  <h1 class="text-3xl font-bold mb-6 text-white text-center">Employee Dashboard</h1>
+
+  <div class="grid md:grid-cols-2 gap-6">
+
+    <!-- Personal Task Progress -->
+    <div class="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/10 hover:border-emerald-400/30 transition-all duration-300">
+      <h3 class="text-lg font-semibold text-emerald-300 mb-3">Personal Task Progress</h3>
+      <canvas id="personalProgressChart" height="240"></canvas>
+      <p id="progressText" class="text-center text-gray-300 mt-3 text-sm"></p>
+    </div>
+
+    <!-- Workload Over Time -->
+    <div class="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/10 hover:border-emerald-400/30 transition-all duration-300">
+      <h3 class="text-lg font-semibold text-emerald-300 mb-3">Workload Over Time</h3>
+      <canvas id="workloadChart" height="240"></canvas>
+    </div>
+  </div>
+
+  <script>
+  (async () => {
+    const API_BASE = "/RemoteTeamPro/backend/api";
+
+    const fetchJSON = async (url) => {
+      try {
+        const res = await fetch(url, { credentials: "include" });
+        return await res.json();
+      } catch (err) {
+        console.error("Fetch error:", err);
+        return {};
+      }
+    };
+
+    const personalCanvas = document.getElementById("personalProgressChart");
+    const workloadCanvas = document.getElementById("workloadChart");
+    const progressText = document.getElementById("progressText");
+
+    let personalChart, workloadChart;
+
+    const renderCharts = (data) => {
+      if (!data || data.error) {
+        console.error("Data Error:", data);
+        progressText.textContent = "Unauthorized or no data available.";
+        return;
+      }
+
+      // ✅ Handle missing fields gracefully
+      const completed = data.progress?.completed ?? 0;
+      const pending = data.progress?.pending ?? 0;
+      const percent = data.progress?.percent ?? 0;
+
+      // 1️⃣ Personal Task Progress (Circular)
+      if (personalChart) personalChart.destroy();
+      personalChart = new Chart(personalCanvas, {
+        type: "doughnut",
+        data: {
+          labels: ["Completed", "Pending"],
+          datasets: [{
+            data: [completed, pending],
+            backgroundColor: ["#10b981", "#6b7280"],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: "#fff" } }
+          }
+        }
+      });
+
+      progressText.textContent = `You have completed ${completed} out of ${completed + pending} tasks (${percent}%).`;
+
+      // 2️⃣ Workload Over Time (Line)
+      const workloadData = data.workload || [];
+      if (workloadChart) workloadChart.destroy();
+      workloadChart = new Chart(workloadCanvas, {
+        type: "line",
+        data: {
+          labels: workloadData.map(w => w.week_label),
+          datasets: [{
+            label: "Tasks Assigned",
+            data: workloadData.map(w => w.task_count),
+            borderColor: "#34d399",
+            backgroundColor: "rgba(52,211,153,0.3)",
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          scales: {
+            x: { ticks: { color: "#fff" } },
+            y: { beginAtZero: true, ticks: { color: "#fff" } }
+          },
+          plugins: {
+            legend: { labels: { color: "#fff" } }
+          }
+        }
+      });
+    };
+
+    // 🚀 Init
+    const data = await fetchJSON(`${API_BASE}/employee-dashboard.php`);
+    console.log("Employee Dashboard Data:", data);
+    renderCharts(data);
+  })();
+  </script>
+</body>
+</html>

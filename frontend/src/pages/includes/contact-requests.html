@@ -1,0 +1,52 @@
+<div class="card">
+  <h2 class="text-xl font-semibold mb-4">Contact Requests</h2>
+  <div id="contact-requests-container" class="overflow-x-auto">
+    <table class="min-w-full text-sm text-left border border-slate-700 rounded-lg overflow-hidden">
+      <thead class="bg-slate-800 text-slate-300">
+        <tr>
+          <th class="px-4 py-2">ID</th>
+          <th class="px-4 py-2">Name</th>
+          <th class="px-4 py-2">Email</th>
+          <th class="px-4 py-2">Message</th>
+          <th class="px-4 py-2">Date</th>
+        </tr>
+      </thead>
+      <tbody id="contact-requests-body" class="divide-y divide-slate-700">
+        <tr>
+          <td colspan="5" class="px-4 py-6 text-center text-slate-400">
+            <i class="fas fa-spinner fa-spin mr-2"></i> Loading contact requests…
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function setup_contact_requests() {
+  const tbody = document.getElementById('contact-requests-body');
+  try {
+    const resp = await fetch('../backend/api/contact_requests.php?action=list');
+    const data = await resp.json();
+    tbody.innerHTML = '';
+    if (data.status === 'success' && data.data.length > 0) {
+      data.data.forEach(req => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-2">${req.id}</td>
+          <td class="px-4 py-2">${req.name}</td>
+          <td class="px-4 py-2">${req.email}</td>
+          <td class="px-4 py-2">${req.message}</td>
+          <td class="px-4 py-2">${req.created_at}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } else {
+      tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-400">${data.message || 'No contact requests found.'}</td></tr>`;
+    }
+  } catch (e) {
+    console.error('Failed to load contact requests', e);
+    tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-red-400">Failed to load contact requests.</td></tr>`;
+  }
+}
+</script>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Skills</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans">
+
+  <main class="max-w-5xl mx-auto p-8 fade-in">
+    <section class="bg-gray-900 bg-opacity-50 backdrop-blur-lg border border-gray-800 p-6 rounded-2xl shadow-xl">
+      <h2 class="text-2xl font-semibold mb-6 flex items-center gap-2 text-white">
+        <i class="fas fa-brain text-purple-400"></i>
+        My Skills
+      </h2>
+
+      <!-- Skill Add Form -->
+      <div class="flex flex-col md:flex-row gap-4 mb-8">
+        <select id="skillSelect" class="bg-gray-800 text-white px-3 py-2 rounded-lg w-full md:w-1/3 border border-gray-700 focus:ring-2 focus:ring-purple-500">
+          <option>Loading...</option>
+        </select>
+
+        <input id="newSkillInput" type="text" placeholder="or type a new skill..." class="bg-gray-800 text-white px-3 py-2 rounded-lg w-full md:w-1/3 border border-gray-700 focus:ring-2 focus:ring-purple-500">
+
+        <select id="levelSelect" class="bg-gray-800 text-white px-3 py-2 rounded-lg w-full md:w-1/4 border border-gray-700 focus:ring-2 focus:ring-purple-500">
+          <option value="Beginner">Beginner</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Advanced">Advanced</option>
+          <option value="Expert">Expert</option>
+        </select>
+
+        <button id="addSkillBtn" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-semibold transition w-full md:w-auto">
+          <i class="fas fa-plus mr-2"></i> Add Skill
+        </button>
+      </div>
+
+      <!-- Skills Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead class="text-purple-400 border-b border-gray-800 uppercase text-sm">
+            <tr>
+              <th class="py-3 px-3">Skill</th>
+              <th class="py-3 px-3">Level</th>
+              <th class="py-3 px-3">Status</th>
+              <th class="py-3 px-3 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="skillsTable" class="text-gray-300 text-sm"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  (async () => {
+    const API_BASE = '/RemoteTeamPro/backend/api/skills';
+    const fetchJSON = async (url, opt = {}) => {
+      const res = await fetch(url, opt);
+      return res.json();
+    };
+
+    const skillSelect = document.getElementById('skillSelect');
+    const newSkillInput = document.getElementById('newSkillInput');
+    const levelSelect = document.getElementById('levelSelect');
+    const addSkillBtn = document.getElementById('addSkillBtn');
+    const skillsTable = document.getElementById('skillsTable');
+
+    // Load available skills into dropdown
+    const loadSkillsList = async () => {
+      const data = await fetchJSON(`${API_BASE}/skill-list.php`);
+      if (!Array.isArray(data)) {
+        skillSelect.innerHTML = '<option>Error loading</option>';
+        return;
+      }
+      skillSelect.innerHTML = data.length
+        ? data.map(s => `<option value="${s.skill_id}">${s.skill_name}</option>`).join('')
+        : '<option>No skills available</option>';
+    };
+
+    // Load employee's own skills
+    const loadUserSkills = async () => {
+      const res = await fetchJSON(`${API_BASE}/employee-skills.php?action=list`);
+      const data = Array.isArray(res.data) ? res.data : [];
+      if (!data.length) {
+        skillsTable.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-gray-500">No skills added yet</td></tr>`;
+        return;
+      }
+
+      skillsTable.innerHTML = data.map(s => `
+        <tr class="border-b border-gray-800 hover:bg-gray-800/40 transition">
+          <td class="py-3 px-3">${escapeHtml(s.skill_name)}</td>
+          <td class="py-3 px-3">${escapeHtml(s.proficiency_level || '')}</td>
+          <td class="py-3 px-3 font-medium ${
+            s.verification_status === 'Verified' ? 'text-green-400' :
+            s.verification_status === 'Rejected' ? 'text-red-400' :
+            'text-yellow-400'
+          }">${escapeHtml(s.verification_status || 'Pending')}</td>
+          <td class="py-3 px-3 text-center">
+            <button data-id="${s.user_skill_id}" class="deleteBtn text-red-400 hover:text-red-600 transition" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    };
+
+    // helper to escape simple HTML
+    function escapeHtml(s) {
+      if (!s && s !== 0) return '';
+      return String(s).replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    // Add new skill (either select existing or create new and then link)
+    addSkillBtn.onclick = async () => {
+      addSkillBtn.disabled = true;
+      try {
+        let skill_id = skillSelect.value;
+        const newSkillName = newSkillInput.value.trim();
+
+        // If user typed a new skill, create it first
+        if (newSkillName) {
+          const res = await fetchJSON(`${API_BASE}/add-skill.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ skill_name: newSkillName })
+          });
+
+          if (res.status === 'success' && res.skill_id) {
+            skill_id = res.skill_id;
+            await loadSkillsList();
+          } else {
+            alert(res.message || 'Could not add skill');
+            return;
+          }
+        }
+
+        // Then link skill to user
+        const addRes = await fetchJSON(`${API_BASE}/employee-skills.php?action=add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            skill_id,
+            proficiency_level: levelSelect.value
+          })
+        });
+
+        if (addRes.status === 'success') {
+          // optionally show a small inline toast — for simplicity using alert
+          // you can replace with custom toast UI
+          // alert(addRes.message);
+        } else {
+          alert(addRes.message || 'Could not link skill to user');
+        }
+
+        newSkillInput.value = ''; // clear input
+        await loadUserSkills();
+      } catch (err) {
+        console.error(err);
+        alert('Unexpected error. Check console.');
+      } finally {
+        addSkillBtn.disabled = false;
+      }
+    };
+
+    // Delete skill
+    skillsTable.onclick = async (e) => {
+      const btn = e.target.closest('.deleteBtn');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (!id) return;
+      if (!confirm('Are you sure you want to delete this skill?')) return;
+      const res = await fetchJSON(`${API_BASE}/employee-skills.php?action=delete&id=${encodeURIComponent(id)}`);
+      if (res.status === 'success') {
+        await loadUserSkills();
+      } else {
+        alert(res.message || 'Could not delete');
+      }
+    };
+
+    await loadSkillsList();
+    await loadUserSkills();
+  })();
+  </script>
+
+</body>
+</html>

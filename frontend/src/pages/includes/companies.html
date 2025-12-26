@@ -1,0 +1,78 @@
+<!-- companies.html -->
+<div class="card">
+    <h2 class="text-xl font-bold mb-2">Companies</h2>
+    <p class="mb-4">Company data is loaded dynamically from the backend API.</p>
+    <div id="companies-list">Loading...</div>
+</div>
+<script>
+// Fetch and display companies with edit functionality
+fetch('http://localhost/RemoteTeamPro/backend/api/companies.php')
+    .then(response => response.json())
+    .then(data => {
+        const list = document.getElementById('companies-list');
+        if (data && Array.isArray(data.data) && data.data.length > 0) {
+            list.innerHTML = data.data.map(company => `
+                <div class="company-card border p-4 mb-3 rounded shadow">
+                    <div>
+                        <label class="font-semibold">ID:</label> ${company.company_id}
+                    </div>
+                    <div>
+                        <label class="font-semibold">Name:</label>
+                        <span class="company-name" id="name-${company.company_id}">${company.company_name}</span>
+                        <input type="text" class="edit-input hidden border px-2 py-1 rounded" id="input-${company.company_id}" value="${company.company_name}">
+                        <button class="edit-btn bg-blue-500 text-white px-2 py-1 rounded ml-2" onclick="editCompany(${company.company_id})">Edit</button>
+                        <button class="save-btn bg-green-500 text-white px-2 py-1 rounded ml-2 hidden" onclick="saveCompany(${company.company_id})">Save</button>
+                        <button class="cancel-btn bg-gray-400 text-white px-2 py-1 rounded ml-2 hidden" onclick="cancelEdit(${company.company_id})">Cancel</button>
+                    </div>
+                    <div>
+                        <label class="font-semibold">Created At:</label> ${company.created_at}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            list.textContent = 'No companies found.';
+        }
+    })
+    .catch(error => {
+        document.getElementById('companies-list').textContent = 'Error loading companies.';
+        console.error(error);
+    });
+
+// Edit, Save, and Cancel functions
+function editCompany(id) {
+    document.getElementById(`name-${id}`).classList.add('hidden');
+    document.getElementById(`input-${id}`).classList.remove('hidden');
+    document.querySelector(`#input-${id}`).focus();
+    document.querySelector(`#input-${id}`).select();
+    document.querySelector(`#input-${id}`).nextElementSibling.classList.add('hidden'); // Edit button
+    document.querySelector(`#input-${id}`).nextElementSibling.nextElementSibling.classList.remove('hidden'); // Save button
+    document.querySelector(`#input-${id}`).nextElementSibling.nextElementSibling.nextElementSibling.classList.remove('hidden'); // Cancel button
+}
+
+function cancelEdit(id) {
+    document.getElementById(`name-${id}`).classList.remove('hidden');
+    document.getElementById(`input-${id}`).classList.add('hidden');
+    document.querySelector(`#input-${id}`).nextElementSibling.classList.remove('hidden'); // Edit button
+    document.querySelector(`#input-${id}`).nextElementSibling.nextElementSibling.classList.add('hidden'); // Save button
+    document.querySelector(`#input-${id}`).nextElementSibling.nextElementSibling.nextElementSibling.classList.add('hidden'); // Cancel button
+}
+
+function saveCompany(id) {
+    const input = document.getElementById(`input-${id}`);
+    const newName = input.value;
+    fetch('http://localhost/RemoteTeamPro/backend/api/companies.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_id: id, company_name: newName, action: 'update' })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            document.getElementById(`name-${id}`).textContent = newName;
+            cancelEdit(id);
+        } else {
+            alert('Failed to update company name.');
+        }
+    })
+    .catch(() => alert('Error updating company.'));
+}

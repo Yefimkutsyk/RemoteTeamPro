@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manager Task Dashboard | RemoteTeamPro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    body { background-color:#0b1120; color:#e2e8f0; font-family:'Inter',sans-serif; }
+    .glass { background:rgba(17,25,40,0.85); border:1px solid rgba(255,255,255,0.05); border-radius:1rem; backdrop-filter:blur(12px); }
+    .loader { border:4px solid rgba(255,255,255,0.1); border-top:4px solid #06b6d4; border-radius:50%; width:32px; height:32px; animation:spin 1s linear infinite; }
+    @keyframes spin { 100% {transform:rotate(360deg);} }
+    select,input,textarea { color:#f1f5f9; background-color:#1e293b; border:1px solid #334155; }
+    select:focus,input:focus,textarea:focus { outline:none; border-color:#06b6d4; box-shadow:0 0 0 1px #06b6d4; }
+    #toastContainer { position:fixed; top:1rem; right:1rem; z-index:9999; }
+    .toast { padding:0.75rem 1rem; border-radius:0.5rem; margin-top:0.5rem; font-weight:500; animation:fadeInOut 4s ease forwards; }
+    @keyframes fadeInOut { 0%{opacity:0;transform:translateY(-10px);}10%,90%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-10px);} }
+  </style>
+</head>
+
+<body class="p-8">
+  <div id="toastContainer"></div>
+
+  <header class="flex justify-between items-center mb-10">
+    <h1 class="text-3xl font-bold text-cyan-400">Task Management Dashboard</h1>
+    <button id="refreshBtn" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg shadow">Refresh</button>
+  </header>
+
+  <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+    <!-- Chart Section -->
+    <div class="glass p-6 flex flex-col items-center justify-center">
+      <h2 class="text-lg font-semibold text-cyan-300 mb-4">Task Status Overview</h2>
+      <canvas id="taskChart" style="height:260px;width:100%;"></canvas>
+    </div>
+
+    <!-- Create Task Form -->
+    <div class="glass p-6">
+      <h2 class="text-lg font-semibold text-cyan-300 mb-4">Create New Task</h2>
+      <form id="taskForm" class="space-y-4">
+        <select id="projectSelect" required class="w-full p-2 rounded">
+          <option value="">Select Project</option>
+        </select>
+
+        <select id="employeeSelect" required class="w-full p-2 rounded">
+          <option value="">Assign to Employee</option>
+        </select>
+
+        <input id="taskName" type="text" placeholder="Task Name" required class="w-full p-2 rounded">
+        <textarea id="description" placeholder="Task Description" class="w-full p-2 rounded"></textarea>
+
+        <!-- New Estimated Hours Field -->
+        <input id="estimatedHours" type="number" step="0.25" min="0" placeholder="Estimated Hours" required class="w-full p-2 rounded">
+
+        <select id="priority" class="w-full p-2 rounded">
+          <option value="Low">Low Priority</option>
+          <option value="Medium">Medium Priority</option>
+          <option value="High">High Priority</option>
+          <option value="Urgent">Urgent</option>
+        </select>
+
+        <input id="dueDate" type="date" required class="w-full p-2 rounded">
+
+        <button type="submit" class="w-full py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg font-semibold">
+          Create Task
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <section class="glass p-6">
+    <h2 class="text-lg font-semibold text-cyan-300 mb-4">All Tasks</h2>
+    <div id="loader" class="loader mx-auto my-6 hidden"></div>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead class="border-b border-gray-700 text-gray-300 uppercase">
+          <tr>
+            <th class="p-2">Task</th>
+            <th class="p-2">Project</th>
+            <th class="p-2">Assigned To</th>
+            <th class="p-2">Priority</th>
+            <th class="p-2">Est. Hours</th>
+            <th class="p-2">Status</th>
+            <th class="p-2">Due Date</th>
+          </tr>
+        </thead>
+        <tbody id="taskTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+<script>
+(async () => {
+  const API = "http://localhost/RemoteTeamPro/backend/api/manager-tasks.php";
+  let chartInstance = null;
+
+  const loader = document.getElementById("loader");
+  const projectSelect = document.getElementById("projectSelect");
+  const employeeSelect = document.getElementById("employeeSelect");
+  const taskTable = document.getElementById("taskTable");
+  const taskForm = document.getElementById("taskForm");
+  const refreshBtn = document.getElementById("refreshBtn");
+  const toastContainer = document.getElementById("toastContainer");
+
+  const showToast = (msg, type = "info") => {
+    const colors = { success: "bg-green-600", error: "bg-red-600", info: "bg-cyan-600" };
+    const div = document.createElement("div");
+    div.className = `toast ${colors[type]} text-white`;
+    div.textContent = msg;
+    toastContainer.appendChild(div);
+    setTimeout(() => div.remove(), 4000);
+  };
+
+  const showLoader = (s) => loader.classList.toggle("hidden", !s);
+
+  const fetchJSON = async (url, opt = {}) => {
+    const r = await fetch(url, opt);
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.message || "Fetch error");
+    return j;
+  };
+
+  async function loadDropdowns() {
+    const [projects, employees] = await Promise.all([
+      fetchJSON(`${API}?action=get_projects`),
+      fetchJSON(`${API}?action=get_employees`)
+    ]);
+    projectSelect.innerHTML = `<option value="">Select Project</option>` + projects.map(p => `<option value="${p.project_id}">${p.project_name}</option>`).join("");
+    employeeSelect.innerHTML = `<option value="">Assign to Employee</option>` + employees.map(e => `<option value="${e.user_id}">${e.first_name} ${e.last_name}</option>`).join("");
+  }
+
+  async function loadTasks() {
+    const data = await fetchJSON(`${API}?action=get_manager_tasks`);
+    renderTasks(data);
+    updateChart(data);
+  }
+
+  function renderTasks(tasks) {
+    taskTable.innerHTML = "";
+    if (!tasks.length) {
+      taskTable.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">No tasks available</td></tr>`;
+      return;
+    }
+    tasks.forEach(t => {
+      taskTable.innerHTML += `
+        <tr class="border-b border-gray-800 hover:bg-gray-800/40">
+          <td class="p-2">${t.task_name}</td>
+          <td class="p-2">${t.project_name}</td>
+          <td class="p-2">${t.assigned_to_name}</td>
+          <td class="p-2">${t.priority}</td>
+          <td class="p-2 text-center">${t.estimated_hours ?? '-'}</td>
+          <td class="p-2">${t.status}</td>
+          <td class="p-2">${t.due_date ?? '-'}</td>
+        </tr>`;
+    });
+  }
+
+  function updateChart(tasks) {
+    const counts = tasks.reduce((a, t) => { a[t.status] = (a[t.status] || 0) + 1; return a; }, {});
+    const ctx = document.getElementById("taskChart").getContext("2d");
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: Object.keys(counts),
+        datasets: [{
+          data: Object.values(counts),
+          backgroundColor: ["#06b6d4","#facc15","#ef4444","#10b981","#3b82f6"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        plugins: { legend: { labels: { color: "#e2e8f0" }, position: "bottom" } },
+        cutout: "70%"
+      }
+    });
+  }
+
+  async function createTask(e) {
+    e.preventDefault();
+    showLoader(true);
+    const payload = {
+      project_id: projectSelect.value,
+      assigned_to_user_id: employeeSelect.value,
+      task_name: document.getElementById("taskName").value,
+      description: document.getElementById("description").value,
+      priority: document.getElementById("priority").value,
+      due_date: document.getElementById("dueDate").value,
+      estimated_hours: document.getElementById("estimatedHours").value
+    };
+    try {
+      const res = await fetch(`${API}?action=create_task`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok) showToast(data.message, "success");
+      else showToast(data.message, "error");
+      taskForm.reset();
+      await loadAll();
+    } catch (e) {
+      console.error(e);
+      showToast("Error creating task", "error");
+    } finally { showLoader(false); }
+  }
+
+  async function loadAll() {
+    showLoader(true);
+    try { await loadDropdowns(); await loadTasks(); } 
+    catch(e){ showToast("Load failed", "error"); console.error(e); }
+    finally { showLoader(false); }
+  }
+
+  refreshBtn.addEventListener("click", loadAll);
+  taskForm.addEventListener("submit", createTask);
+
+  window.initManagerTasks = async () => { await loadAll(); };
+  await loadAll();
+})();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  logActivity('VIEW_TASKS', 'Viewed tasks tab');
+});
+</script>
+</body>
+</html>

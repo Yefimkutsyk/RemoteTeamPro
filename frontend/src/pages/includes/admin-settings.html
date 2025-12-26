@@ -1,0 +1,172 @@
+<!-- admin-settings.html -->
+<div class="p-6">
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-semibold text-white mb-4">Company Settings</h1>
+
+    <div id="card" class="bg-gray-900/60 backdrop-blur rounded-2xl p-6 border border-white/10 text-white">
+      <!-- Company info -->
+      <div class="grid md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="text-gray-400 text-sm">Company Name</label>
+          <input id="company_name" class="w-full mt-1 p-3 rounded bg-gray-800 border border-gray-700" />
+        </div>
+        <div>
+          <label class="text-gray-400 text-sm">Email</label>
+          <input id="company_email" class="w-full mt-1 p-3 rounded bg-gray-800 border border-gray-700" />
+        </div>
+        <div>
+          <label class="text-gray-400 text-sm">Phone</label>
+          <input id="company_phone" class="w-full mt-1 p-3 rounded bg-gray-800 border border-gray-700" />
+        </div>
+        <div>
+          <label class="text-gray-400 text-sm">Address</label>
+          <input id="company_address" class="w-full mt-1 p-3 rounded bg-gray-800 border border-gray-700" />
+        </div>
+      </div>
+
+      <!-- Admin Key -->
+      <div class="mb-6">
+        <label class="text-gray-400 text-sm">Admin Key (visible — you requested)</label>
+        <input id="admin_key" class="w-full mt-1 p-3 rounded bg-gray-800 border border-gray-700 font-mono" />
+        <p class="text-xs text-gray-400 mt-1">Minimum 12 characters, must include at least one number. Hyphens allowed. Example: qwe-123-rty-456</p>
+      </div>
+
+      <!-- Services CRUD -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-gray-400 text-sm">Services</label>
+          <button id="refreshBtn" class="text-sm text-gray-300">Refresh</button>
+        </div>
+
+        <div id="servicesWrap" class="flex flex-wrap gap-2 mb-3"></div>
+
+        <div class="flex gap-2">
+          <input id="newService" placeholder="New service name" class="flex-1 p-2 rounded bg-gray-800 border border-gray-700" />
+          <button id="addService" class="bg-green-600 px-4 py-2 rounded">Add</button>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button id="saveBtn" class="bg-purple-600 px-5 py-2 rounded">Save Changes</button>
+        <div id="status" class="text-gray-300 self-center"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(async () => {
+  const API = '/RemoteTeamPro/backend/api/admin-settings.php';
+
+  const $ = (id) => document.getElementById(id);
+  const companyNameEl = $('company_name');
+  const companyEmailEl = $('company_email');
+  const companyPhoneEl = $('company_phone');
+  const companyAddressEl = $('company_address');
+  const adminKeyEl = $('admin_key');
+  const servicesWrap = $('servicesWrap');
+  const newServiceEl = $('newService');
+  const addServiceBtn = $('addService');
+  const saveBtn = $('saveBtn');
+  const statusEl = $('status');
+  const refreshBtn = $('refreshBtn');
+
+  let services = [];
+
+  const toast = (msg, type='info') => {
+    statusEl.textContent = msg;
+    setTimeout(()=> { if (statusEl.textContent === msg) statusEl.textContent = ''; }, 4000);
+  };
+
+  async function fetchJSON(url, opts = {}) {
+    try {
+      const res = await fetch(url, { credentials:'include', ...opts });
+      return await res.json();
+    } catch (e) {
+      console.error(e);
+      return { success:false, message: e.message || 'Network error' };
+    }
+  }
+
+  function renderServices() {
+    servicesWrap.innerHTML = '';
+    if (!services.length) {
+      servicesWrap.innerHTML = '<div class="text-gray-400">No services added.</div>';
+      return;
+    }
+    services.forEach((s, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'bg-gray-800 px-3 py-1 rounded-full flex items-center gap-2';
+      chip.innerHTML = `<span class="text-white">${s}</span><button data-i="${i}" class="text-red-400 hover:text-red-500">&times;</button>`;
+      servicesWrap.appendChild(chip);
+    });
+    servicesWrap.querySelectorAll('button[data-i]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = Number(btn.dataset.i);
+        services.splice(idx, 1);
+        renderServices();
+      });
+    });
+  }
+
+  async function load() {
+    const res = await fetchJSON(API);
+    if (!res.success) { toast(res.message || 'Failed to load'); return; }
+    const c = res.company;
+    companyNameEl.value = c.company_name || '';
+    companyEmailEl.value = c.company_email || '';
+    companyPhoneEl.value = c.company_phone || '';
+    companyAddressEl.value = c.company_address || '';
+    adminKeyEl.value = c.admin_key || '';
+    services = Array.isArray(c.services) ? c.services : (c.services ? JSON.parse(c.services) : []);
+    renderServices();
+  }
+
+  addServiceBtn.addEventListener('click', () => {
+    const v = newServiceEl.value.trim();
+    if (!v) return;
+    if (services.includes(v)) { toast('Service already exists','warn'); newServiceEl.value=''; return; }
+    services.push(v);
+    newServiceEl.value = '';
+    renderServices();
+  });
+
+  refreshBtn.addEventListener('click', load);
+
+  saveBtn.addEventListener('click', async () => {
+    const payload = {
+      company_name: companyNameEl.value.trim(),
+      company_email: companyEmailEl.value.trim(),
+      company_phone: companyPhoneEl.value.trim(),
+      company_address: companyAddressEl.value.trim(),
+      admin_key: adminKeyEl.value.trim(),
+      services: services
+    };
+
+    // optional client-side validation for admin_key
+    const key = payload.admin_key;
+    if (key && !/^(?=.*\d)[A-Za-z\d-]{12,}$/.test(key)) {
+      alert('Admin key invalid. Min 12 chars, include number. Hyphens allowed.');
+      return;
+    }
+
+    statusEl.textContent = 'Saving...';
+    const res = await fetchJSON(API, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    if (res.success) {
+      toast(res.message || 'Saved','success');
+      // reload to get normalized services JSON etc.
+      await load();
+    } else {
+      toast(res.message || 'Save failed','error');
+    }
+  });
+
+  // initial load
+  await load();
+})();
+</script>

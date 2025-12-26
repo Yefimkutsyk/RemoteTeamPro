@@ -1,0 +1,133 @@
+<!-- admin-timesheets.html -->
+<div class="bg-gray-900 bg-opacity-80 backdrop-blur-md rounded-2xl p-6 shadow-lg text-white">
+  <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
+    <div>
+      <h2 class="text-2xl font-semibold">Company Timesheets</h2>
+      <p class="text-gray-400 text-sm">All submitted timesheets for projects in your company</p>
+    </div>
+
+    <div class="flex gap-3 items-center">
+      <input id="tsSearch" type="text" placeholder="Search timesheets..." class="px-3 py-2 rounded-lg text-gray-900" />
+      <button id="downloadCSV" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition">
+        Download CSV
+      </button>
+    </div>
+  </div>
+
+  <div id="timesheetTableWrap" class="overflow-x-auto rounded-xl bg-gray-800 p-2 shadow-inner">
+    <div id="timesheetTable" class="text-gray-400 p-4">Loading timesheets...</div>
+  </div>
+</div>
+
+<script>
+(async () => {
+  const API = '/RemoteTeamPro/backend/api/admin-timesheets.php';
+  const tableWrap = document.getElementById('timesheetTable');
+  const downloadBtn = document.getElementById('downloadCSV');
+  const searchInput = document.getElementById('tsSearch');
+
+  const fetchJSON = async (url, opts = {}) => {
+    try {
+      const res = await fetch(url, { credentials: 'include', ...opts });
+      const ct = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        if (ct.includes('application/json')) return await res.json();
+        throw new Error('HTTP ' + res.status);
+      }
+      if (ct.includes('application/json')) return await res.json();
+      return { success: false, message: 'Unexpected response' };
+    } catch (err) {
+      console.error('fetchJSON error', err);
+      return { success: false, message: err.message || 'Network error' };
+    }
+  };
+
+  const formatDate = (d) => {
+    if (!d) return '-';
+    try {
+      const x = new Date(d);
+      if (isNaN(x)) return d;
+      return new Intl.DateTimeFormat('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }).format(x);
+    } catch {
+      return d;
+    }
+  };
+
+  const renderTable = (rows) => {
+    if (!Array.isArray(rows) || rows.length === 0) {
+      tableWrap.innerHTML = `<div class="text-gray-400 p-4">No timesheets found for this company.</div>`;
+      return;
+    }
+
+    let html = `
+      <table class="min-w-full text-sm rounded-lg overflow-hidden bg-gray-800">
+        <thead class="bg-indigo-700 text-left">
+          <tr>
+            <th class="px-4 py-2">ID</th>
+            <th class="px-4 py-2">Employee</th>
+            <th class="px-4 py-2">Project</th>
+            <th class="px-4 py-2">Task</th>
+            <th class="px-4 py-2">Date</th>
+            <th class="px-4 py-2">Hours</th>
+            <th class="px-4 py-2">Description</th>
+            <th class="px-4 py-2">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+    `;
+
+    rows.forEach(r => {
+      html += `
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-4 py-2">${r.timesheet_id ?? '-'}</td>
+          <td class="px-4 py-2 font-medium">${r.employee_name ?? '-'}</td>
+          <td class="px-4 py-2">${r.project_name ?? '-'}</td>
+          <td class="px-4 py-2">${r.task_name ?? '-'}</td>
+          <td class="px-4 py-2">${formatDate(r.date)}</td>
+          <td class="px-4 py-2">${r.hours_logged ?? '-'}</td>
+          <td class="px-4 py-2">${r.description ? (r.description.length>100? r.description.slice(0,100)+'...': r.description) : '-'}</td>
+          <td class="px-4 py-2">
+            <span class="px-2 py-1 rounded text-xs font-semibold ${
+              r.status && r.status.toLowerCase().includes('approved') ? 'bg-green-600 text-white' :
+              r.status && r.status.toLowerCase().includes('pending') ? 'bg-yellow-600 text-white' :
+              'bg-red-600 text-white'
+            }">${r.status ?? '-'}</span>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table>`;
+    tableWrap.innerHTML = html;
+  };
+
+  // load initial data
+  tableWrap.innerHTML = '<div class="text-gray-400 p-4">Loading timesheets...</div>';
+  const res = await fetchJSON(API);
+  if (!res || !res.success) {
+    tableWrap.innerHTML = `<div class="text-red-400 p-4">Failed to load timesheets: ${res?.message ?? 'Unknown error'}</div>`;
+    return;
+  }
+  let data = res.data || [];
+  renderTable(data);
+
+  // search
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    if (!q) {
+      renderTable(data);
+      return;
+    }
+    const filtered = data.filter(row => {
+      return Object.values(row).some(v => String(v ?? '').toLowerCase().includes(q));
+    });
+    renderTable(filtered);
+  });
+
+  // CSV download
+  downloadBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.open(API + '?download=csv', '_blank', 'noopener');
+  });
+})();
+</script>

@@ -1,0 +1,76 @@
+<div id="adminCompanyOverview" class="p-8 text-gray-100 font-inter">
+  <h1 class="text-2xl font-semibold mb-6">Company Overview</h1>
+
+  <div id="companyContainer" class="bg-gray-800/70 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/10">
+    <p class="text-gray-400">Loading company information...</p>
+  </div>
+</div>
+
+<script>
+(async () => {
+  const API_URL = "/RemoteTeamPro/backend/api/company-overview.php";
+  const container = document.getElementById("companyContainer");
+
+  const fetchJSON = async (url) => {
+    try {
+      const res = await fetch(url, { credentials: "include" });
+      return await res.json();
+    } catch (err) {
+      console.error("Fetch failed:", err);
+      return { success: false };
+    }
+  };
+
+  const renderCompany = (data) => {
+    if (!data) {
+      container.innerHTML = `<p class="text-gray-400 text-center">No company information found.</p>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="grid md:grid-cols-2 gap-8">
+        <div>
+          <h2 class="text-xl font-semibold mb-2 text-white">${data.company_name}</h2>
+          <p class="text-gray-400 text-sm mb-4">Company ID: ${data.company_id}</p>
+          <p class="text-gray-300 text-sm mb-2">
+            <span class="text-gray-400">Services:</span> ${data.services || 'N/A'}
+          </p>
+          <p class="text-gray-300 text-sm mb-2">
+            <span class="text-gray-400">Created:</span> ${new Date(data.created_at).toLocaleDateString()}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 text-center">
+          <div class="bg-gray-900/60 rounded-xl p-4 shadow-inner">
+            <p class="text-2xl font-semibold text-purple-400">${data.total_users || 0}</p>
+            <p class="text-gray-400 text-sm mt-1">Users</p>
+          </div>
+          <div class="bg-gray-900/60 rounded-xl p-4 shadow-inner">
+            <p class="text-2xl font-semibold text-blue-400">${data.total_teams || 0}</p>
+            <p class="text-gray-400 text-sm mt-1">Teams</p>
+          </div>
+          <div class="bg-gray-900/60 rounded-xl p-4 shadow-inner">
+            <p class="text-2xl font-semibold text-green-400">${data.total_projects || 0}</p>
+            <p class="text-gray-400 text-sm mt-1">Projects</p>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  const init = async () => {
+    container.innerHTML = `<p class="text-gray-400">Loading company information...</p>`;
+    const res = await fetchJSON(API_URL);
+
+    if (res.success && res.data) {
+      renderCompany(res.data);
+    } else {
+      container.innerHTML = `<p class="text-gray-500 text-center mt-6">Unable to load company data.</p>`;
+    }
+  };
+
+  // Run once, and reload when tab reappears
+  await init();
+  document.addEventListener("tab:show", init);
+})();
+</script>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manager Project Reports</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .card-input, .card-select {
+      background-color: #374151;
+      color: #e5e7eb;
+      border: 1px solid #4b5563;
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.6rem;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+    .card-label {
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <div class="max-w-7xl mx-auto p-6">
+    <h1 class="text-2xl font-semibold mb-6 text-center text-indigo-400">Manager Project Reports</h1>
+    <div id="projectContainer" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+  </div>
+
+  <script>
+  (async () => {
+    // local scope only — no globals
+    const API_BASE = "http://localhost/RemoteTeamPro/backend/api/reports";
+
+    const fetchJSON = async (url, opts = {}) => {
+      try {
+        const res = await fetch(url, opts);
+        // if response is not JSON, throw to be caught below
+        return await res.json();
+      } catch (err) {
+        console.error("fetchJSON error:", err, url);
+        return null;
+      }
+    };
+
+    const fetchBlob = async (url, opts = {}) => {
+      try {
+        const res = await fetch(url, opts);
+        return await res.blob();
+      } catch (err) {
+        console.error("fetchBlob error:", err, url);
+        return null;
+      }
+    };
+
+    const container = document.getElementById('projectContainer');
+
+    const createCard = (p) => {
+      // create wrapper card element
+      const card = document.createElement('div');
+      card.className = "bg-gray-800 rounded-lg p-4 shadow-md border border-gray-700 flex flex-col justify-between";
+
+      // safe fallback values
+      const completion = p.completion_percentage ?? 0;
+      const tech = p.technology_stack ?? '';
+      const budget = p.budget ?? 0;
+      const startDate = p.start_date ?? '';
+      const endDate = p.end_date ?? '';
+      const description = p.description ?? '';
+
+      // inject markup
+      card.innerHTML = `
+        <h2 class="text-lg font-semibold text-indigo-300 mb-2 truncate">${escapeHtml(p.project_name)}</h2>
+
+        <div class="space-y-2">
+          <div>
+            <label class="card-label">Status</label>
+            <select data-field="status" class="card-select">
+              <option ${p.status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option ${p.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+              <option ${p.status === 'Completed' ? 'selected' : ''}>Completed</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="card-label">Completion (%)</label>
+            <input data-field="completion_percentage" type="number" min="0" max="100"
+              class="card-input" value="${completion}" />
+          </div>
+
+          <div>
+            <label class="card-label">Tech Stack</label>
+            <input data-field="technology_stack" type="text" class="card-input" 
+              value="${escapeAttr(tech)}" />
+          </div>
+
+          <div>
+            <label class="card-label">Budget (₹)</label>
+            <input data-field="budget" type="number" class="card-input" 
+              value="${budget}" />
+          </div>
+
+          <div>
+            <label class="card-label">Start Date</label>
+            <input data-field="start_date" type="date" class="card-input" 
+              value="${startDate}" />
+          </div>
+
+          <div>
+            <label class="card-label">End Date</label>
+            <input data-field="end_date" type="date" class="card-input" 
+              value="${endDate}" />
+          </div>
+        </div>
+
+        <div class="mt-3 flex items-center justify-between gap-2">
+          <button class="save-btn px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-sm rounded-md">💾 Save</button>
+          <button class="send-btn px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-sm rounded-md">✉️ Send</button>
+          <button class="pdf-btn px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-sm rounded-md">⬇ PDF</button>
+        </div>
+
+        <canvas id="chart-${p.project_id}" height="100" class="mt-4"></canvas>
+      `;
+
+      // attach to DOM first so canvas exists
+      container.appendChild(card);
+
+      // create chart
+      try {
+        const ctx = card.querySelector(`canvas#chart-${p.project_id}`);
+        // eslint-disable-next-line no-undef
+        new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Completed', 'Remaining'],
+            datasets: [{
+              data: [Number(completion) || 0, 100 - (Number(completion) || 0)],
+              backgroundColor: ['#10b981', '#1f2937'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            cutout: '75%'
+          }
+        });
+      } catch (err) {
+        console.error("chart error for project", p.project_id, err);
+      }
+
+      // helpers to read fields
+      const readFields = () => {
+        const obj = { project_id: p.project_id };
+        card.querySelectorAll('[data-field]').forEach(f => {
+          const key = f.getAttribute('data-field');
+          obj[key] = f.value;
+        });
+        return obj;
+      };
+
+      // Save button
+      const saveBtn = card.querySelector('.save-btn');
+      saveBtn.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        const payload = readFields();
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+        try {
+          const res = await fetchJSON(`${API_BASE}/save-report.php`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res && res.success) {
+            alert(res.message || 'Saved successfully!');
+          } else {
+            alert((res && res.message) || 'Failed to save');
+          }
+        } catch (err) {
+          console.error("saveReport error:", err);
+          alert("Error saving report");
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = "💾 Save";
+        }
+      });
+
+      // Send button
+      const sendBtn = card.querySelector('.send-btn');
+      sendBtn.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        sendBtn.disabled = true;
+        sendBtn.textContent = "Sending...";
+        try {
+          const response = await fetchJSON(`${API_BASE}/send-report-mail.php`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_id: p.project_id })
+          });
+          if (response) {
+            alert(response.message || (response.success ? "Mail sent!" : "Failed to send"));
+          } else {
+            alert("Mail API did not respond correctly");
+          }
+        } catch (err) {
+          console.error("sendReport error:", err);
+          alert("Something went wrong sending the report.");
+        } finally {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = "✉️ Send";
+        }
+      });
+
+      // PDF button
+      const pdfBtn = card.querySelector('.pdf-btn');
+      pdfBtn.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        pdfBtn.disabled = true;
+        pdfBtn.textContent = "Preparing...";
+        try {
+          const canvas = card.querySelector(`canvas#chart-${p.project_id}`);
+          const img = canvas ? canvas.toDataURL("image/png") : '';
+          const payload = readFields();
+          payload.chart = img;
+          const blob = await fetchBlob(`${API_BASE}/download-report-manager.php`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!blob) {
+            alert('Failed to generate PDF');
+            return;
+          }
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `Project_${p.project_id}_Report.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        } catch (err) {
+          console.error("downloadPDF error:", err);
+          alert("Failed to download PDF");
+        } finally {
+          pdfBtn.disabled = false;
+          pdfBtn.innerHTML = "⬇ PDF";
+        }
+      });
+
+    }; // end createCard
+
+    // escape helpers
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    function escapeAttr(str) {
+      return escapeHtml(str).replace(/"/g, '&quot;');
+    }
+
+    // main loader
+    async function loadProjects() {
+      container.innerHTML = ''; // clear safely
+      const data = await fetchJSON(`${API_BASE}/generate-report-manager.php`, { credentials: 'include' });
+      if (!data) {
+        container.innerHTML = `<p class="text-red-400">Error contacting server.</p>`;
+        return;
+      }
+      if (!data.success) {
+        container.innerHTML = `<p class="text-red-400">${escapeHtml(data.message || 'No data')}</p>`;
+        return;
+      }
+      const projects = data.data || [];
+      if (!projects.length) {
+        container.innerHTML = `<p class="text-gray-300">No projects found.</p>`;
+        return;
+      }
+      projects.forEach(p => {
+        createCard(p);
+      });
+    }
+
+    // init
+    await loadProjects();
+
+    // expose nothing globally — done
+  })();
+  </script>
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  logActivity('VIEW_REPORT', 'Viewed Reports tab');
+});
+</script>
+</body>
+</html>

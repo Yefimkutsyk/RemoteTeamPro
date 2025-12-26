@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Activity Logs | RemoteTeamPro</title>
+
+  <!-- Tailwind CDN for dev -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    /* slight tweaks for the log table card */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255,255,255,0.04);
+      backdrop-filter: blur(8px);
+    }
+    .table-head {
+      background: rgba(31, 41, 55, 0.7);
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100">
+
+  <div class="p-6 max-w-6xl mx-auto">
+    <header class="mb-6">
+      <h1 class="text-2xl font-semibold flex items-center gap-3">
+        <span class="inline-block p-2 rounded-md bg-purple-700/20 text-purple-300">
+          <i class="fas fa-clipboard-list"></i>
+        </span>
+        Activity Logs
+      </h1>
+      <p class="text-sm text-gray-400 mt-2">Recent user actions and audit trail for your company.</p>
+    </header>
+
+    <section class="glass-card rounded-xl p-4 shadow-lg">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <div class="flex items-center gap-3">
+          <input id="atl_search" type="search" placeholder="Search user, action or details" 
+                 class="px-3 py-2 rounded-md bg-gray-800 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-600 w-64">
+          <button id="atl_refresh" class="px-3 py-2 rounded-md bg-purple-600 hover:bg-purple-500 text-white font-medium">
+            <i class="fas fa-sync-alt mr-2"></i> Refresh
+          </button>
+          <button id="atl_export" class="px-3 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-gray-200">
+            <i class="fas fa-file-export mr-2"></i> Export CSV
+          </button>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div id="atl_status" class="text-sm text-gray-400">Loading...</div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm text-left">
+          <thead class="table-head text-gray-300 uppercase text-xs">
+            <tr>
+              <th class="px-4 py-3">#</th>
+              <th class="px-4 py-3">User</th>
+              <th class="px-4 py-3">Action Type</th>
+              <th class="px-4 py-3">Details</th>
+              <th class="px-4 py-3">IP</th>
+              <th class="px-4 py-3">Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="atl_tbody" class="divide-y divide-gray-700">
+            <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Self-contained script — IIFE so nothing leaks to global scope -->
+  <script>
+  (async () => {
+    // Local-only constants
+    const API_BASE = '/RemoteTeamPro/backend/api';
+    const LIST_ENDPOINT = `${API_BASE}/activity-log.php?action=list`;
+    const ADD_ENDPOINT = `${API_BASE}/activity-log.php?action=add`;
+
+    // Local state (scoped to IIFE only)
+    let logs = [];    // raw logs array
+    let filtered = []; // after search/filter
+
+    // DOM refs (looked up inside IIFE)
+    const $status = document.getElementById('atl_status');
+    const $tbody = document.getElementById('atl_tbody');
+    const $search = document.getElementById('atl_search');
+    const $refresh = document.getElementById('atl_refresh');
+    const $export = document.getElementById('atl_export');
+
+    // Helper: fetch JSON safely
+    const fetchJSON = async (url, opts = {}) => {
+      try {
+        const res = await fetch(url, Object.assign({ credentials: 'include' }, opts));
+        // if response is not JSON, this will throw and be caught
+        const json = await res.json();
+        return json;
+      } catch (err) {
+        console.error('fetchJSON error for', url, err);
+        return { status: 'error', message: err.message || 'Fetch failed' };
+      }
+    };
+
+    // Helper: send log (tries global logActivity if exists, else falls back to POST)
+    const sendLog = async (actionType, details = '') => {
+      try {
+        if (typeof window !== 'undefined' && typeof window.logActivity === 'function') {
+          // if you included logActivity.js globally, use it (non-blocking)
+          try { window.logActivity(actionType, details); } catch(e){ console.warn('window.logActivity failed', e); }
+          return;
+        }
+        // fallback direct POST
+        await fetchJSON(ADD_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action_type: actionType, details })
+        });
+      } catch (e) { /* ignore */ }
+    };
+
+    // Render UI safely
+    const render = () => {
+      $tbody.innerHTML = '';
+      if (!Array.isArray(filtered) || filtered.length === 0) {
+        $tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No activity logs found.</td></tr>';
+        $status.textContent = `Showing 0 logs`;
+        return;
+      }
+
+      // Build rows
+      const frag = document.createDocumentFragment();
+      filtered.forEach((log, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-800';
+        const user = (log.user_name ?? (log.user_id ? `User ${log.user_id}` : 'Unknown')).toString().replace(/</g,'&lt;');
+        const type = (log.action_type ?? '').toString().replace(/</g,'&lt;');
+        const details = (log.details ?? '').toString().replace(/</g,'&lt;');
+        const ip = (log.ip_address ?? log.ip ?? '') .toString().replace(/</g,'&lt;');
+        const ts = log.timestamp ? new Date(log.timestamp).toLocaleString() : (log.created_at ? new Date(log.created_at).toLocaleString() : '-');
+
+        tr.innerHTML = `
+          <td class="px-4 py-3 text-gray-300">${idx + 1}</td>
+          <td class="px-4 py-3 text-gray-200 font-medium">${user}</td>
+          <td class="px-4 py-3 text-purple-300 font-semibold">${type}</td>
+          <td class="px-4 py-3 text-gray-300"><pre class="whitespace-pre-wrap">${details}</pre></td>
+          <td class="px-4 py-3 text-gray-400">${ip}</td>
+          <td class="px-4 py-3 text-gray-400">${ts}</td>
+        `;
+        frag.appendChild(tr);
+      });
+      $tbody.appendChild(frag);
+      $status.textContent = `Showing ${filtered.length} logs`;
+    };
+
+    // Fetch logs from backend and update state
+    const loadLogs = async () => {
+      $status.textContent = 'Loading...';
+      $tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">Loading...</td></tr>';
+      const data = await fetchJSON(LIST_ENDPOINT);
+      if (!data || data.status === 'error') {
+        console.error('Activity list error:', data);
+        $tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-400">Failed to load activity logs.</td></tr>`;
+        $status.textContent = data && data.message ? data.message : 'Failed';
+        logs = [];
+        filtered = [];
+        return;
+      }
+
+      // backend returns {"status":"success","logs":[...]}
+      logs = Array.isArray(data.logs) ? data.logs : (Array.isArray(data) ? data : []);
+      // normalize keys if backend returns bare array (older versions)
+      if (Array.isArray(data) && data.length && data[0].log_id) {
+        logs = data;
+      }
+
+      // initial filtered list is full logs (sorted by timestamp desc assumed by backend)
+      filtered = logs.slice();
+      render();
+    };
+
+    // Search/filter
+    const applySearch = () => {
+      const q = ($search.value || '').trim().toLowerCase();
+      if (!q) {
+        filtered = logs.slice();
+        render();
+        return;
+      }
+      filtered = logs.filter(l => {
+        const user = (l.user_name || '').toString().toLowerCase();
+        const type = (l.action_type || '').toString().toLowerCase();
+        const details = (l.details || '').toString().toLowerCase();
+        return user.includes(q) || type.includes(q) || details.includes(q);
+      });
+      render();
+    };
+
+    // Export CSV helper
+    const exportCSV = () => {
+      if (!Array.isArray(filtered) || filtered.length === 0) {
+        alert('No logs to export');
+        return;
+      }
+      const header = ['log_id','user_id','user_name','action_type','details','ip_address','timestamp'];
+      const rows = filtered.map(r => [
+        r.log_id ?? '',
+        r.user_id ?? '',
+        `"${(r.user_name ?? '').replace(/"/g,'""')}"`,
+        `"${(r.action_type ?? '').replace(/"/g,'""')}"`,
+        `"${(r.details ?? '').replace(/"/g,'""')}"`,
+        r.ip_address ?? r.ip ?? '',
+        r.timestamp ?? r.created_at ?? ''
+      ]);
+      const csv = [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `activity_logs_${(new Date()).toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    // Hook event listeners (scoped)
+    $refresh.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await loadLogs();
+    });
+
+    $search.addEventListener('input', () => {
+      // throttle could be added, but simple immediate filter is fine
+      applySearch();
+    });
+
+    $export.addEventListener('click', (e) => {
+      e.preventDefault();
+      exportCSV();
+    });
+
+    // Initialize: load logs and log this view
+    await loadLogs();
+
+    // Log the page view (non-blocking)
+    sendLog('VIEW_ACTIVITY_LOG', 'Opened admin activity log page');
+
+    // When the injected HTML is removed from DOM (tab switch), browser will drop this script context.
+    // No global listeners are registered outside this IIFE.
+  })();
+  </script>
+</body>
+</html>

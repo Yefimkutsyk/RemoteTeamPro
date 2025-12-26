@@ -1,0 +1,312 @@
+<!-- frontend/src/pages/includes/employee-attendance.html -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="p-6 text-white font-[Manrope] min-h-screen bg-gray-950">
+  <div class="glass-card rounded-2xl p-6 max-w-4xl mx-auto shadow-xl">
+    <!-- Header -->
+    <div class="flex flex-wrap justify-between items-center mb-6 gap-3">
+      <div>
+        <h2 class="text-2xl font-bold text-violet-300">My Attendance</h2>
+        <div id="todayLabel" class="text-sm text-gray-400 mt-1"></div>
+      </div>
+      <div class="flex flex-wrap gap-2 items-center">
+        <select id="statusSelect" class="bg-gray-800/60 text-white p-2 rounded">
+          <option value="Present">Present</option>
+          <option value="Leave">Leave</option>
+          <option value="Absent">Absent</option>
+        </select>
+        <input id="noteInput" placeholder="Add a note (optional)" class="bg-gray-800/60 text-white p-2 rounded w-48 md:w-64" />
+        <button id="checkInBtn" class="px-4 py-2 rounded bg-violet-500 hover:bg-violet-600 transition">Check In</button>
+        <button id="checkOutBtn" class="px-4 py-2 rounded bg-teal-500 hover:bg-teal-600 transition">Check Out</button>
+      </div>
+    </div>
+
+    <!-- Charts + Today Info -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-gray-900/40 p-4 rounded h-[280px]">
+        <canvas id="streakChart" class="w-full h-full"></canvas>
+      </div>
+      <div class="bg-gray-900/40 p-4 rounded">
+        <h4 class="text-sm text-gray-300 mb-2">Today's Status</h4>
+        <div id="todayInfo" class="text-gray-200 text-sm"></div>
+        <div class="mt-4 space-x-2">
+          <button id="markLeaveBtn" class="px-3 py-2 rounded bg-amber-500 hover:bg-amber-600">Mark Leave</button>
+          <button id="requestMissedBtn" class="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-700">Request Missed</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="mt-8 overflow-x-auto">
+      <h4 class="text-sm text-gray-300 mb-2">Last Records</h4>
+      <table class="w-full text-left text-sm border-collapse">
+        <thead class="text-gray-400 border-b border-gray-700">
+          <tr>
+            <th class="p-2">Date</th>
+            <th>Status</th>
+            <th>Check-in</th>
+            <th>Check-out</th>
+            <th>Hours</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="recordsTable" class="text-gray-300"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(async () => {
+  const API = '/RemoteTeamPro/backend/api/attendance/attendance-employee.php';
+
+  // Normalize server date/time strings into a JS Date object (best-effort).
+  function parseServerDate(s) {
+    if (!s) return null;
+    // If already a Date object, return it
+    if (s instanceof Date) return s;
+
+    // Trim spaces
+    s = String(s).trim();
+
+    // If format is 'YYYY-MM-DD HH:MM:SS' => replace space with 'T' to get ISO-like 'YYYY-MM-DDTHH:MM:SS'
+    const fullDatetimeMatch = /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(s);
+    if (fullDatetimeMatch) {
+      try {
+        return new Date(s.replace(/\s+/, 'T'));
+      } catch (e) {
+        // continue to other parsing attempts
+      }
+    }
+
+    // If string is ISO-ish already (contains T) try direct parse
+    if (s.indexOf('T') !== -1 || s.indexOf('Z') !== -1) {
+      const d = new Date(s);
+      if (!isNaN(d)) return d;
+    }
+
+    // If only time present like '09:15:00'
+    if (/^\d{2}:\d{2}(:\d{2})?$/.test(s)) {
+      // prefix today's date
+      const today = new Date();
+      const datePart = today.toISOString().slice(0,10); // YYYY-MM-DD
+      const dt = new Date((datePart + 'T' + s).replace(/\s+/, 'T'));
+      if (!isNaN(dt)) return dt;
+    }
+
+    // If date only 'YYYY-MM-DD'
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const dt = new Date(s + 'T00:00:00');
+      if (!isNaN(dt)) return dt;
+    }
+
+    // Try generic Date parse as last resort
+    const d = new Date(s);
+    if (!isNaN(d)) return d;
+
+    // Give up
+    return null;
+  }
+
+  // Format server date/time into readable string or '-' if null
+  function formatServerDate(s) {
+    const d = parseServerDate(s);
+    if (!d) return '-';
+    return d.toLocaleString();
+  }
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayLabel = document.getElementById('todayLabel');
+  todayLabel.textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', year:'numeric', month:'short', day:'numeric' });
+
+  const noteInput = document.getElementById('noteInput');
+  const checkInBtn = document.getElementById('checkInBtn');
+  const checkOutBtn = document.getElementById('checkOutBtn');
+  const markLeaveBtn = document.getElementById('markLeaveBtn');
+  const requestMissedBtn = document.getElementById('requestMissedBtn');
+  const recordsTable = document.getElementById('recordsTable');
+  const todayInfo = document.getElementById('todayInfo');
+  const ctx = document.getElementById('streakChart').getContext('2d');
+  let streakChart;
+
+  async function fetchRecords() {
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error('Failed to load');
+      return await res.json();
+    } catch (err) {
+      console.error('fetchRecords error', err);
+      return [];
+    }
+  }
+
+  async function postAction(payload) {
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    } catch (err) {
+      console.error('postAction error', err);
+      return { error: 'Network error' };
+    }
+  }
+
+  function renderRecords(rows) {
+    // Ensure rows is an array
+    if (!Array.isArray(rows)) rows = [];
+    recordsTable.innerHTML = rows.map(r => `
+      <tr class="border-b border-gray-800 hover:bg-gray-800/40">
+        <td class="p-2">${r.attendance_date ?? '-'}</td>
+        <td class="p-2">${r.status ?? '-'}</td>
+        <td class="p-2">${formatServerDate(r.check_in_time)}</td>
+        <td class="p-2">${formatServerDate(r.check_out_time)}</td>
+        <td class="p-2">${r.hours_worked ?? '-'}</td>
+        <td class="p-2">${r.notes ? String(r.notes).replace(/\n/g, '<br>') : '-'}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderTodayInfo(todayRec) {
+    if (!todayRec) {
+      todayInfo.innerHTML = `<div class="text-gray-400">You haven't marked attendance today.</div>`;
+      checkInBtn.disabled = false;
+      checkOutBtn.disabled = true;
+      return;
+    }
+    todayInfo.innerHTML = `
+      <div><strong>Status:</strong> ${todayRec.status ?? '-'}</div>
+      <div><strong>Check-in:</strong> ${formatServerDate(todayRec.check_in_time)}</div>
+      <div><strong>Check-out:</strong> ${formatServerDate(todayRec.check_out_time)}</div>
+      <div><strong>Hours Worked:</strong> ${todayRec.hours_worked ?? '-'}</div>
+      <div class="mt-2 text-gray-400"><strong>Notes:</strong><br>${todayRec.notes ? String(todayRec.notes).replace(/\n/g,'<br>') : '-'}</div>
+    `;
+    checkInBtn.disabled = !!todayRec.check_in_time;
+    checkOutBtn.disabled = !todayRec.check_in_time || !!todayRec.check_out_time;
+  }
+
+  function renderStreakChart(rows) {
+    // Map statuses by date for last 30 days
+    const map = {};
+    if (Array.isArray(rows)) {
+      rows.forEach(r => { if (r && r.attendance_date) map[r.attendance_date] = r.status; });
+    }
+    const labels = [], data = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0,10);
+      labels.push(d.toLocaleDateString(undefined, { month:'short', day:'numeric' }));
+      const s = map[key] || 'Absent';
+      data.push(s === 'Present' ? 1 : s === 'Leave' ? 0.5 : 0);
+    }
+
+    if (streakChart) streakChart.destroy();
+    streakChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Attendance Trend',
+          data,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139,92,246,0.18)',
+          tension: 0.35,
+          fill: true,
+          pointRadius: 3
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        responsive: true,
+        scales: {
+          y: {
+            min: 0,
+            max: 1.05,
+            ticks: {
+              stepSize: 0.5,
+              callback: (v) => v === 1 ? 'Present' : v === 0.5 ? 'Leave' : 'Absent'
+            },
+            grid: { color: 'rgba(255,255,255,0.06)' }
+          },
+          x: {
+            ticks: { color: '#9aa4b2' },
+            grid: { color: 'rgba(255,255,255,0.03)' }
+          }
+        },
+        plugins: { legend: { labels: { color: '#cbd5e1' } } }
+      }
+    });
+  }
+
+  async function loadAll() {
+    const rows = await fetchRecords();
+    renderRecords(rows);
+    const todayRec = rows.find(r => r.attendance_date === (new Date().toISOString().slice(0,10)));
+    renderTodayInfo(todayRec);
+    renderStreakChart(rows);
+  }
+
+  // Button handlers
+  checkInBtn.onclick = async () => {
+    const note = noteInput.value.trim() || null;
+    const res = await postAction({ action: 'check_in', notes: note });
+    if (res && res.success) {
+      // optionally show toast instead of alert
+      // showToast('Checked in at ' + (res.time || 'now'));
+    } else {
+      alert(res.message || res.error || 'Check-in failed');
+    }
+    await loadAll();
+    noteInput.value = '';
+  };
+
+  checkOutBtn.onclick = async () => {
+    const note = noteInput.value.trim() || null;
+    const res = await postAction({ action: 'check_out', notes: note });
+    if (res && res.success) {
+      // showToast('Checked out');
+    } else {
+      alert(res.message || res.error || 'Check-out failed');
+    }
+    await loadAll();
+    noteInput.value = '';
+  };
+
+  markLeaveBtn.onclick = async () => {
+    const note = noteInput.value.trim() || null;
+    const res = await postAction({ action: 'mark', status: 'Leave', notes: note });
+    if (res && res.success) {
+      // showToast('Leave marked');
+    } else {
+      alert(res.error || 'Failed to mark leave');
+    }
+    await loadAll();
+  };
+
+  requestMissedBtn.onclick = async () => {
+    const reason = prompt('Explain your missed attendance (this will be saved as a note):');
+    if (!reason) return;
+    const res = await postAction({ action: 'mark', status: 'Present', notes: 'Missed marking: ' + reason });
+    if (res && res.success) {
+      // showToast('Missed request saved');
+    } else {
+      alert(res.error || 'Failed to save request');
+    }
+    await loadAll();
+  };
+
+  // initial load
+  await loadAll();
+})();
+</script>
+
+<style>
+.glass-card {
+  background: rgba(17, 24, 39, 0.9);
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(10px);
+}
+</style>

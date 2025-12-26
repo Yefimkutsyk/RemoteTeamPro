@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register Company - RemoteTeamPro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+</head>
+<body class="bg-black text-gray-200 font-sans">
+  <!-- Container -->
+  <div class="min-h-screen flex items-center justify-center px-4">
+    <div class="bg-gray-900 shadow-xl rounded-2xl p-10 max-w-2xl w-full">
+      <h1 class="text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 mb-8">
+        Register Your Company
+      </h1>
+
+      <!-- Registration Form -->
+      <form id="companyForm" class="space-y-6">
+        <!-- Company Name -->
+        <div>
+          <label class="block mb-2 font-medium">Company Name</label>
+          <input type="text" name="company_name" required
+                 class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-purple-500 focus:ring focus:ring-purple-600 text-white"/>
+        </div>
+
+        <!-- Services -->
+        <div>
+          <label class="block mb-2 font-medium">Services</label>
+          <textarea name="services" rows="3"
+                    class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-purple-500 focus:ring focus:ring-purple-600 text-white"></textarea>
+        </div>
+
+        <hr class="border-gray-700 my-6"/>
+
+        <!-- Admin Details -->
+        <h2 class="text-xl font-semibold mb-4 text-purple-400">Admin User Details</h2>
+
+        <div>
+          <label class="block mb-2 font-medium">Full Name</label>
+          <input type="text" name="admin_name" required
+                 class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-purple-500 text-white"/>
+        </div>
+
+        <div>
+          <label class="block mb-2 font-medium">Email</label>
+          <input type="email" name="admin_email" required
+                 class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-purple-500 text-white"/>
+        </div>
+
+        <div>
+          <label class="block mb-2 font-medium">Password</label>
+          <input type="password" name="admin_password" required
+                 class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-purple-500 text-white"/>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit"
+                class="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl text-white font-semibold hover:shadow-lg hover:scale-105 transition">
+          Register Company
+        </button>
+      </form>
+
+      <!-- Admin Key Section (shown after success) -->
+      <div id="adminKeySection" class="hidden mt-8 p-6 bg-gray-800 border border-gray-700 rounded-xl">
+        <h3 class="text-lg font-semibold text-purple-400 mb-3">Your Admin Key</h3>
+        <div class="flex items-center justify-between">
+          <input id="adminKey" type="text" readonly
+                 class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white mr-3"/>
+          <button onclick="copyKey()" class="px-4 py-2 bg-purple-600 rounded-lg text-white hover:bg-purple-700">
+            <i class="fa fa-copy"></i>
+          </button>
+        </div>
+        <p class="mt-3 text-sm text-gray-400">Save this key securely. You’ll need it to manage your company account.</p>
+      </div>
+
+      <!-- Status -->
+      <p id="statusMsg" class="mt-6 text-center text-sm text-gray-400"></p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('companyForm');
+    const adminKeySection = document.getElementById('adminKeySection');
+    const adminKeyInput = document.getElementById('adminKey');
+    const statusMsg = document.getElementById('statusMsg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusMsg.textContent = "Registering...";
+
+      const formData = new FormData(form);
+
+      try {
+        const res = await fetch("http://localhost/RemoteTeamPro/backend/api/create_company.php", {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+  statusMsg.textContent = "Company registered! OTP sent to your email.";
+  adminKeyInput.value = data.admin_key;
+  adminKeySection.classList.remove("hidden");
+  form.classList.add("hidden");
+
+  // ✅ Redirect to OTP page
+  setTimeout(() => {
+    window.location.href = `http://localhost/RemoteTeamPro/backend/api/verify_admin_otp_page.php?user_id=${data.admin_user_id}&email=${encodeURIComponent(formData.get('admin_email'))}`;
+  }, 3000);
+}
+
+      } catch (err) {
+        statusMsg.textContent = "Server error. Please try again.";
+      }
+    });
+
+    function copyKey() {
+      adminKeyInput.select();
+      document.execCommand("copy");
+      alert("Admin Key copied!");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Manager — Timesheets</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+:root{ --accent:#14b8a6; --muted:#94a3b8; }
+.content { padding:2rem; min-height: calc(100vh - 72px); background: linear-gradient(180deg, rgba(11,17,32,0.2), transparent); }
+.panel{ background: rgba(17,24,39,0.9); border:1px solid rgba(255,255,255,0.04); border-radius:12px; padding:1.25rem; box-shadow:0 6px 30px rgba(2,6,23,0.6); }
+.h1{ color:#60a5fa; font-weight:700; font-size:1.5rem; }
+.section-title{ color:var(--accent); font-weight:700; font-size:1.05rem; }
+input, select { width:100%; padding:0.55rem; border-radius:8px; background:rgba(6,10,18,0.6); color:#e6eef8; border:1px solid rgba(255,255,255,0.04); }
+.btn-accent{ background: linear-gradient(90deg,#0ea5a3,#14b8a6); color:white; padding:0.5rem 0.9rem; border-radius:8px; border:none; cursor:pointer; font-weight:700; }
+#toast{ position:fixed; top:1rem; right:1rem; z-index:9999; }
+#loader{ display:none; margin:1.5rem auto; width:36px; height:36px; border:4px solid rgba(255,255,255,0.06); border-top:4px solid var(--accent); border-radius:50%; animation:spin 1s linear infinite; }
+@keyframes spin{to{transform:rotate(360deg);}}
+.table-scroll { max-height:520px; overflow:auto; }
+.action-btn { padding:0.35rem 0.6rem; border-radius:6px; font-weight:600; border:none; cursor:pointer; }
+.action-approve{ background: rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.18); }
+.action-reject{ background: rgba(239,68,68,0.08); color:#ef4444; border:1px solid rgba(239,68,68,0.12); }
+.filter-row{ display:flex; gap:0.75rem; align-items:center; }
+</style>
+</head>
+<body>
+  <div class="content">
+    <div class="flex items-center justify-between mb-6">
+      <div class="h1">Timesheets</div>
+      <div style="display:flex; gap:0.75rem; align-items:center;">
+        <select id="employeeFilter" style="min-width:180px; padding:0.45rem; border-radius:8px; background:rgba(6,10,18,0.6); color:#e6eef8; border:1px solid rgba(255,255,255,0.04);">
+          <option value="">All employees</option>
+        </select>
+        <input id="fromDate" type="date" style="padding:0.45rem; border-radius:8px; background:rgba(6,10,18,0.6); color:#e6eef8; border:1px solid rgba(255,255,255,0.04);"/>
+        <input id="toDate" type="date" style="padding:0.45rem; border-radius:8px; background:rgba(6,10,18,0.6); color:#e6eef8; border:1px solid rgba(255,255,255,0.04);"/>
+        <button id="refresh" class="btn-accent">Refresh</button>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="panel lg:col-span-2">
+        <div class="section-title mb-4">Timesheet Submissions</div>
+        <div id="loader"></div>
+        <div class="table-scroll">
+          <table class="w-full text-sm">
+            <thead class="text-gray-300 border-b border-gray-700">
+              <tr><th class="py-2 text-left">Employee</th><th class="py-2">Date</th><th class="py-2">Project/Task</th><th class="py-2">Hours</th><th class="py-2">Status</th><th class="py-2">Action</th></tr>
+            </thead>
+            <tbody id="tsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="section-title mb-4">Summary (30 days)</div>
+        <canvas id="byEmployee" style="height:200px"></canvas>
+        <div class="mt-4">
+          <canvas id="byProject" style="height:160px"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const API = "http://localhost/RemoteTeamPro/backend/api/timesheets.php";
+  const toast = document.getElementById('toast');
+  const loader = document.getElementById('loader');
+  const tsTable = document.getElementById('tsTable');
+  const employeeFilter = document.getElementById('employeeFilter');
+  const fromDate = document.getElementById('fromDate');
+  const toDate = document.getElementById('toDate');
+  const refreshBtn = document.getElementById('refresh');
+  let allRows = [];
+
+  const showToast = (msg, type='info') => {
+    const d = document.createElement('div');
+    d.className = `px-3 py-2 rounded ${type==='error'?'bg-red-600 text-white':'bg-cyan-600 text-white'} mb-2`;
+    d.innerText = msg;
+    toast.appendChild(d);
+    setTimeout(()=>d.remove(),3000);
+  };
+
+  const fetchJSON = async (url, opts={}) => {
+    const r = await fetch(url, { credentials:'include', ...opts});
+    const json = await r.json().catch(()=>({}));
+    if (!r.ok) throw new Error(json.message || 'Fetch error');
+    return json;
+  };
+
+  async function loadFilters() {
+    try {
+      const tasks = await fetchJSON(`${API}?action=get_tasks`);
+      // derive unique employees from tasks
+      const map = new Map();
+      tasks.forEach(t => {
+        if (t.assigned_to_user_id) map.set(t.assigned_to_user_id, t.assigned_to);
+      });
+      const opts = `<option value="">All employees</option>` + Array.from(map.entries()).map(([id,name])=>`<option value="${id}">${name}</option>`).join('');
+      employeeFilter.innerHTML = opts;
+    } catch (err) {
+      showToast('Failed to load filters: ' + err.message, 'error');
+    }
+  }
+
+  function renderTable(rows) {
+    tsTable.innerHTML = rows.map(r=>`
+      <tr class="border-b border-gray-800">
+        <td class="py-2">${r.employee_name||'-'}</td>
+        <td class="py-2 text-center">${r.date}</td>
+        <td class="py-2">${r.project_name}<div class="text-xs text-gray-400">${r.task_name}</div></td>
+        <td class="py-2 text-center">${r.hours_logged}</td>
+        <td class="py-2 text-center"><span class="${r.status==='Approved'?'text-green-400':r.status==='Rejected'?'text-red-400':'text-yellow-400'}">${r.status}</span></td>
+        <td class="py-2 text-center">
+          ${r.status==='Pending Approval'?`<button data-id="${r.timesheet_id}" data-action="approve" class="action-btn action-approve mr-2">Approve</button><button data-id="${r.timesheet_id}" data-action="reject" class="action-btn action-reject">Reject</button>` : '-'}
+        </td>
+      </tr>
+    `).join('') || `<tr><td colspan="6" class="py-6 text-gray-400 text-center">No timesheets</td></tr>`;
+    // wire actions
+    document.querySelectorAll('button[data-action]').forEach(btn=>{
+      btn.onclick = async (e) => {
+        const id = btn.getAttribute('data-id');
+        const action = btn.getAttribute('data-action') === 'approve' ? 'Approved' : 'Rejected';
+        await updateStatus(id, action);
+      };
+    });
+  }
+
+  function applyFilters(rows) {
+    const emp = employeeFilter.value;
+    const f = fromDate.value;
+    const t = toDate.value;
+    let res = rows;
+    if (emp) res = res.filter(r => String(r.user_id) === String(emp));
+    if (f) res = res.filter(r => r.date >= f);
+    if (t) res = res.filter(r => r.date <= t);
+    return res;
+  }
+
+  async function loadTimesheets() {
+    loader.style.display = 'block';
+    try {
+      allRows = await fetchJSON(`${API}?action=get_timesheets`);
+      const filtered = applyFilters(allRows);
+      renderTable(filtered);
+    } catch (err) {
+      showToast('Failed to load timesheets: ' + err.message, 'error');
+    } finally {
+      loader.style.display = 'none';
+    }
+  }
+
+  async function updateStatus(timesheet_id, status) {
+    try {
+      const res = await fetchJSON(`${API}?action=update_status`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ timesheet_id, status })
+      });
+      showToast(res.message || 'Updated');
+      await loadTimesheets();
+      await loadSummary();
+    } catch (err) {
+      showToast(err.message || 'Update failed', 'error');
+    }
+  }
+
+  let empChart = null, projChart = null;
+  async function loadSummary() {
+    try {
+      const s = await fetchJSON(`${API}?action=get_summary`);
+      const empLabels = s.byEmployee.map(x=>x.employee_name);
+      const empValues = s.byEmployee.map(x=>parseFloat(x.total_hours));
+      const projLabels = s.byProject.map(x=>x.project_name);
+      const projValues = s.byProject.map(x=>parseFloat(x.total_hours));
+      const ctxE = document.getElementById('byEmployee').getContext('2d');
+      const ctxP = document.getElementById('byProject').getContext('2d');
+      if (empChart) empChart.destroy();
+      if (projChart) projChart.destroy();
+      empChart = new Chart(ctxE, { type:'bar', data:{ labels:empLabels, datasets:[{ label:'Hours', data:empValues, backgroundColor:'rgba(20,184,166,0.8)'}] }, options:{ plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }});
+      projChart = new Chart(ctxP, { type:'bar', data:{ labels:projLabels, datasets:[{ label:'Hours', data:projValues, backgroundColor:'rgba(96,165,250,0.8)'}] }, options:{ plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }});
+    } catch (err) {
+      // ignore silently, summary is optional
+    }
+  }
+
+  refreshBtn.addEventListener('click', async ()=> { await loadFilters(); await loadTimesheets(); await loadSummary(); });
+  employeeFilter.addEventListener('change', ()=> renderTable(applyFilters(allRows)));
+  fromDate.addEventListener('change', ()=> renderTable(applyFilters(allRows)));
+  toDate.addEventListener('change', ()=> renderTable(applyFilters(allRows)));
+
+  // IIFE loader
+  (async ()=> {
+    await loadFilters();
+    await loadTimesheets();
+    await loadSummary();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!-- admin-users.html (renamed from users.html for admin dashboard modular includes)
+     All backend API endpoints and features preserved. -->
+<div class="card">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
+    <h2 class="text-2xl font-bold">Users</h2>
+    <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+      <input id="search-users" type="text" placeholder="Search users (name, email, role)..."
+             class="w-full md:w-64 bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+      <select id="sort-users"
+              class="bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+        <option value="user_id">ID</option>
+        <option value="first_name">First Name</option>
+        <option value="last_name">Last Name</option>
+        <option value="email">Email</option>
+        <option value="role">Role</option>
+        <option value="status">Status</option>
+        <option value="created_at">Created</option>
+      </select>
+      <button onclick="showUserForm()" 
+              class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:opacity-90 transition">
+        <i class="fas fa-plus mr-2"></i> Add User
+      </button>
+    </div>
+  </div>
+
+  <div id="users-container"></div>
+  <div id="users-pagination" class="flex justify-center items-center mt-4 gap-2"></div>
+</div>
+
+<!-- Hidden Form -->
+<div id="user-form-area" class="card mt-6 hidden">
+  <div class="flex justify-between items-center mb-4">
+    <h3 id="user-form-title" class="text-xl font-semibold">Add User</h3>
+    <button onclick="hideUserForm()" class="text-gray-400 hover:text-gray-200">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  
+  <form id="user-form" class="grid grid-cols-1 md:grid-cols-2 gap-4" autocomplete="off">
+    <input type="hidden" name="user_id" id="user_id">
+
+    <div>
+      <label class="block text-sm text-gray-300 mb-1">First Name</label>
+      <input type="text" id="first_name" name="first_name" required
+             class="w-full bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+    </div>
+
+    <div>
+      <label class="block text-sm text-gray-300 mb-1">Last Name</label>
+      <input type="text" id="last_name" name="last_name"
+             class="w-full bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="block text-sm text-gray-300 mb-1">Email</label>
+      <input type="email" id="email" name="email" required
+             class="w-full bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="block text-sm text-gray-300 mb-1">Password</label>
+      <input type="password" id="password" name="password" minlength="6" required
+             class="w-full bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+      <small class="text-gray-400">Set an initial password for the user (min 6 characters)</small>
+    </div>
+
+    <div>
+      <label class="block text-sm text-gray-300 mb-1">Role</label>
+      <select id="role" name="role"
+              class="w-full bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+        <option value="Admin">Admin</option>
+        <option value="Manager">Manager</option>
+        <option value="Employee">Employee</option>
+        <option value="Client">Client</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm text-gray-300 mb-1">Status</label>
+      <select id="status" name="status"
+              class="w-full bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+    </div>
+
+    <div class="md:col-span-2 flex justify-end gap-3 mt-4">
+      <button type="button" onclick="hideUserForm()" 
+              class="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-500 text-white transition">
+        Cancel
+      </button>
+      <button type="submit" 
+              class="px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-500 text-white font-medium hover:opacity-90 transition">
+        Save
+      </button>
+    </div>
+  </form>
+</div>
+
+<style>
+/* ...existing style from users.html... */
+.hidden { display: none !important; }
+
+</style>
+<script>
+const USER_API = "/RemoteTeamPro/backend/api/users.php";
+const DEV_COMPANY_ID = null;
+let currentPage = 1, perPage = 8, currentSort = "user_id", currentOrder = "asc", currentSearch = "";
+let lastCreatedId = null;
+
+function debounce(fn, delay=300){
+  let t;
+  return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),delay); };
+}
+
+async function loadUsers() {
+  try {
+    const url = `${USER_API}?page=${currentPage}&per_page=${perPage}&sort=${currentSort}&order=${currentOrder}&q=${encodeURIComponent(currentSearch)}`;
+    const fetchUrl = DEV_COMPANY_ID ? `${url}&company_id=${DEV_COMPANY_ID}` : url;
+    const res = await fetch(fetchUrl, { credentials: 'include' });
+    const data = await res.json();
+
+    let users = Array.isArray(data) ? data : (data.data || []);
+    let total = data.total ?? users.length;
+
+    const container = document.getElementById("users-container");
+    if (!users.length) {
+      container.innerHTML = `<div class="text-center py-6 text-gray-400">No users found.</div>`;
+      document.getElementById("users-pagination").innerHTML = "";
+      return;
+    }
+
+    let html = `<div class="overflow-x-auto">
+      <table class="min-w-full text-sm border border-gray-700 rounded-lg overflow-hidden">
+        <thead class="bg-gray-900 text-gray-200">
+          <tr>
+            <th class="px-3 py-2">ID</th>
+            <th class="px-3 py-2">Name</th>
+            <th class="px-3 py-2">Email</th>
+            <th class="px-3 py-2">Role</th>
+            <th class="px-3 py-2">Status</th>
+            <th class="px-3 py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700 bg-gray-800 text-gray-100">`;
+
+    users.forEach(u => {
+      const highlightClass = (lastCreatedId && Number(lastCreatedId) === Number(u.user_id)) ? 'highlight-new' : '';
+      html += `
+      <tr class="hover:bg-gray-700/50 ${highlightClass}" data-user-row="${u.user_id}">
+        <td class="px-3 py-2">${u.user_id}</td>
+        <td class="px-3 py-2">${escapeHtml(u.first_name || "")} ${escapeHtml(u.last_name || "")}</td>
+        <td class="px-3 py-2">${escapeHtml(u.email)}</td>
+        <td class="px-3 py-2">${escapeHtml(u.role)}</td>
+        <td class="px-3 py-2">
+          <div class="toggle-switch ${u.status === 'Active' ? 'on' : ''}" data-userid="${u.user_id}" onclick="toggleStatus(this)">
+            <div class="knob"></div>
+          </div>
+        </td>
+        <td class="px-3 py-2 flex gap-2">
+          <button onclick="editUser(${u.user_id})" class="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-500"><i class="fas fa-edit"></i></button>
+          <button onclick="deleteUser(${u.user_id})" class="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-500"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    });
+
+    html += "</tbody></table></div>";
+    container.innerHTML = html;
+
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+    let pagHtml = "";
+    if (totalPages > 1) {
+      if (currentPage > 1) pagHtml += `<button onclick="gotoPage(${currentPage-1})" class="px-3 py-1 bg-gray-700 text-white rounded">Prev</button>`;
+      for (let i=1;i<=totalPages;i++){
+        pagHtml += `<button onclick="gotoPage(${i})" class="px-3 py-1 rounded ${i===currentPage?'bg-purple-600 text-white':'bg-gray-700 text-gray-200'}">${i}</button>`;
+      }
+      if (currentPage < totalPages) pagHtml += `<button onclick="gotoPage(${currentPage+1})" class="px-3 py-1 bg-gray-700 text-white rounded">Next</button>`;
+    }
+    document.getElementById("users-pagination").innerHTML = pagHtml;
+
+    if (lastCreatedId) {
+      setTimeout(()=> {
+        const r = document.querySelector(`[data-user-row="${lastCreatedId}"]`);
+        if (r) r.classList.remove('highlight-new');
+        lastCreatedId = null;
+      }, 2000);
+    }
+  } catch (err) {
+    console.error(err);
+    showToast("Error loading users.");
+  }
+}
+
+function gotoPage(page) { currentPage = page; loadUsers(); }
+
+document.getElementById("search-users").addEventListener("input", debounce((e)=>{
+  currentSearch = e.target.value.trim();
+  currentPage = 1;
+  loadUsers();
+}, 300));
+
+document.getElementById("sort-users").addEventListener("change", e => {
+  currentSort = e.target.value;
+  currentPage = 1;
+  loadUsers();
+});
+
+function showUserForm() {
+  document.getElementById("user-form").reset();
+  document.getElementById("user-form-title").innerText = "Add User";
+  document.getElementById("user_id").value = "";
+
+  // show password field for new user
+  const pwBlock = document.querySelector('label[for="password"]')?.parentElement;
+  if (pwBlock) pwBlock.classList.remove("hidden");
+
+  const pw = document.getElementById("password");
+  pw.disabled = false;
+  pw.required = true;
+  pw.value = "";
+  pw.placeholder = "Enter new password";
+
+  document.getElementById("user-form-area").classList.remove("hidden");
+}
+
+async function editUser(id) {
+  const res = await fetch(`${USER_API}/${id}`, { credentials: 'include' });
+  const u = await res.json();
+
+  // hide password field completely when editing
+  const pwBlock = document.querySelector('label[for="password"]')?.parentElement;
+  if (pwBlock) pwBlock.classList.add("hidden");
+
+  showUserForm(); // show base form
+
+  // then fill data after showing
+  document.getElementById("user-form-title").innerText = "Edit User";
+  ['first_name','last_name','email','role','status'].forEach(k=> {
+    if (document.getElementById(k)) document.getElementById(k).value = u[k] ?? '';
+  });
+  document.getElementById("user_id").value = u.user_id;
+}
+
+
+function hideUserForm() {
+  document.getElementById("user-form-area").classList.add("hidden");
+}
+
+document.getElementById("user-form").onsubmit = async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const id = f.get('user_id');
+  const body = Object.fromEntries(f.entries());
+
+  // only include password for new users
+  if (id) delete body.password;
+
+  const method = id ? "PUT" : "POST";
+  const url = id ? `${USER_API}/${id}` : USER_API;
+
+  const res = await fetch(url, {
+    method,
+    credentials: 'include',
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  const result = await res.json();
+
+  if (res.ok) {
+    showToast(id ? "User updated!" : "User added!");
+    if (!id && result.user_id) lastCreatedId = result.user_id;
+    hideUserForm();
+    await loadUsers();
+  } else {
+    alert(result.message || "Something went wrong.");
+  }
+};
+
+async function editUser(id) {
+  const res = await fetch(`${USER_API}/${id}`, { credentials: 'include' });
+  const u = await res.json();
+
+  // Instantly disable password before showing
+  const pw = document.getElementById("password");
+  pw.disabled = true;
+  pw.required = false;
+  pw.value = "";
+  pw.placeholder = "Password editing disabled";
+  pw.classList.add("cursor-not-allowed", "bg-gray-700/60");
+
+  showUserForm();
+  document.getElementById("user-form-title").innerText = "Edit User";
+  ['first_name','last_name','email','role','status'].forEach(k=> {
+    if (document.getElementById(k)) document.getElementById(k).value = u[k] ?? '';
+  });
+  document.getElementById("user_id").value = u.user_id;
+}
+
+async function deleteUser(id) {
+  if (!confirm("Delete user?")) return;
+  const res = await fetch(`${USER_API}/${id}`, { method: "DELETE", credentials: 'include' });
+  const r = await res.json();
+  if (res.ok) {
+    showToast(r.message || "Deleted");
+    loadUsers();
+  } else {
+    alert(r.message || "Failed to delete.");
+  }
+}
+
+async function toggleStatus(el) {
+  const id = el.dataset.userid;
+  const isOn = el.classList.contains('on');
+  const newStatus = isOn ? 'Inactive' : 'Active';
+  const res = await fetch(`${USER_API}/${id}`, {
+    method: "PUT",
+    credentials: 'include',
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: newStatus })
+  });
+  const r = await res.json();
+  if (res.ok) {
+    if (isOn) el.classList.remove('on'); else el.classList.add('on');
+    showToast(`Status: ${newStatus}`);
+  } else {
+    alert(r.message || "Failed to change status.");
+  }
+}
+
+function showToast(message) {
+  const t = document.createElement('div');
+  t.className = 'toast fixed bottom-6 right-6 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg';
+  t.innerText = message;
+  document.body.appendChild(t);
+  setTimeout(()=> t.remove(), 2800);
+}
+
+function escapeHtml(s){ return s ? String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;') : ''; }
+
+loadUsers();
+</script>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Manager Attendance Dashboard</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- PapaParse for CSV -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            darkbg: "#0f172a",
+            darkcard: "rgba(30,41,59,0.6)",
+            darktext: "#e2e8f0",
+            accent: "#3b82f6"
+          },
+          backdropBlur: {
+            sm: '4px'
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background: radial-gradient(circle at top left, #0f172a, #1e293b);
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+    }
+    .glass {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #attendanceChart {
+      max-width: 180px;
+      max-height: 180px;
+      margin: 0 auto;
+      display: block;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+  <div class="max-w-7xl mx-auto py-10 px-6">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-semibold tracking-wide">Attendance Dashboard</h1>
+      <button id="exportCSV"
+        class="bg-accent hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition-all">
+        Export CSV
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="glass p-5 rounded-xl shadow-md flex flex-wrap gap-4 items-center mb-8">
+      <div>
+        <label class="block text-sm font-medium mb-1">Start Date</label>
+        <input type="date" id="startDate" class="bg-gray-800 text-darktext border border-gray-700 p-2 rounded-md" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">End Date</label>
+        <input type="date" id="endDate" class="bg-gray-800 text-darktext border border-gray-700 p-2 rounded-md" />
+      </div>
+      <button id="filterBtn" class="bg-accent hover:bg-blue-700 px-4 py-2 rounded-md text-white">
+        Filter
+      </button>
+      <button id="resetBtn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md text-white">
+        Reset
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div class="glass p-6 rounded-xl shadow-md overflow-x-auto">
+      <table class="min-w-full text-sm" id="attendanceTable">
+        <thead class="bg-gray-800 uppercase text-gray-300 text-xs">
+          <tr>
+            <th class="px-4 py-3 text-left">Employee</th>
+            <th class="px-4 py-3 text-left">Email</th>
+            <th class="px-4 py-3 text-left">Date</th>
+            <th class="px-4 py-3 text-left">Check-in</th>
+            <th class="px-4 py-3 text-left">Check-out</th>
+            <th class="px-4 py-3 text-left">Hours</th>
+            <th class="px-4 py-3 text-left">Status</th>
+            <th class="px-4 py-3 text-left">Notes</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceBody" class="divide-y divide-gray-700"></tbody>
+      </table>
+    </div>
+
+    <!-- Chart -->
+    <div class="glass mt-8 p-6 rounded-xl shadow-md flex flex-col items-center">
+      <h2 class="text-lg font-semibold mb-3">Summary</h2>
+      <canvas id="attendanceChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+  (async () => {
+    const API_BASE = "http://localhost/RemoteTeamPro/backend/api/attendance";
+    let attendanceData = [];
+    let chart = null;
+
+    const fetchJSON = async (url, opt = {}) => {
+      try {
+        const res = await fetch(url, { ...opt, credentials: "include" });
+        return await res.json();
+      } catch (err) {
+        console.error("Fetch error:", err);
+        return { success: false, data: [] };
+      }
+    };
+
+    const renderEmpty = () => {
+      document.getElementById("attendanceBody").innerHTML =
+        `<tr><td colspan="8" class="text-center py-4 text-gray-400">No records found</td></tr>`;
+    };
+
+    const renderTable = () => {
+      const tbody = document.getElementById("attendanceBody");
+      if (!attendanceData.length) return renderEmpty();
+
+      tbody.innerHTML = attendanceData
+        .map(
+          (row) => `
+          <tr class="hover:bg-gray-800 transition">
+            <td class="px-4 py-2">${row.full_name || "-"}</td>
+            <td class="px-4 py-2">${row.email || "-"}</td>
+            <td class="px-4 py-2">${row.attendance_date || "-"}</td>
+            <td class="px-4 py-2">${row.check_in_time || "-"}</td>
+            <td class="px-4 py-2">${row.check_out_time || "-"}</td>
+            <td class="px-4 py-2">${row.hours_worked || "0"}</td>
+            <td class="px-4 py-2">
+              <span class="px-2 py-1 rounded-md ${
+                row.status === "Present"
+                  ? "bg-green-600 text-white"
+                  : row.status === "Absent"
+                  ? "bg-red-600 text-white"
+                  : "bg-yellow-500 text-black"
+              }">${row.status}</span>
+            </td>
+            <td class="px-4 py-2 text-gray-300">${row.notes || ""}</td>
+          </tr>`
+        )
+        .join("");
+    };
+
+    const renderChart = () => {
+      const ctx = document.getElementById("attendanceChart").getContext("2d");
+      const statusCounts = attendanceData.reduce((acc, item) => {
+        acc[item.status] = (acc[item.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      const labels = Object.keys(statusCounts);
+      const values = Object.values(statusCounts);
+
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels,
+          datasets: [
+            {
+              data: values,
+              backgroundColor: ["#22c55e", "#ef4444", "#f59e0b", "#3b82f6"],
+              borderWidth: 0
+            }
+          ]
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          cutout: "70%",
+          plugins: {
+            legend: {
+              display: true,
+              position: "bottom",
+              labels: { color: "#cbd5e1", font: { size: 11 } }
+            }
+          }
+        }
+      });
+    };
+
+    const fetchAttendance = async (start = "", end = "") => {
+      let url = `${API_BASE}/attendance-manager.php`;
+      if (start && end) url += `?start=${start}&end=${end}`;
+      const json = await fetchJSON(url);
+      if (json.success && Array.isArray(json.data)) {
+        attendanceData = json.data;
+        renderTable();
+        renderChart();
+      } else renderEmpty();
+    };
+
+    const exportCSV = () => {
+      if (!attendanceData.length) return alert("No data to export");
+      const csv = Papa.unparse(attendanceData);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "attendance.csv";
+      link.click();
+    };
+
+    document.getElementById("filterBtn").onclick = () => {
+      const s = document.getElementById("startDate").value;
+      const e = document.getElementById("endDate").value;
+      fetchAttendance(s, e);
+    };
+
+    document.getElementById("resetBtn").onclick = () => {
+      document.getElementById("startDate").value = "";
+      document.getElementById("endDate").value = "";
+      fetchAttendance();
+    };
+
+    document.getElementById("exportCSV").onclick = exportCSV;
+
+    // init on load
+    await fetchAttendance();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1302 @@
+/* Body Styles: Global font and background setup */
+body {
+    font-family: 'Manrope', sans-serif; /* Setting 'Manrope' as the primary font */
+    /* Background Gradient: Creating a sophisticated, ethereal background with radial gradients for visual depth. */
+    /* Color 1: rgba(100, 0, 180, 0.3) - A rich purple-blue with transparency */
+    /* Color 2: rgba(150, 0, 200, 0.3) - A deeper magenta-purple with transparency */
+    /* Color 3: rgba(50, 0, 180, 0.25) - A dark blue with transparency */
+    background: radial-gradient(
+        circle at 30% 40%,
+        rgba(100, 0, 180, 0.3),
+        transparent 35%
+    ),
+    radial-gradient(
+        circle at 60% 60%,
+        rgba(150, 0, 200, 0.3),
+        transparent 35%
+    ),
+    radial-gradient(
+        circle at 70% 30%,
+        rgba(50, 0, 180, 0.25),
+        transparent 35%
+    ),
+    #0a0a0a; /* Base Dark Tone: A very dark gray, serving as the background fallback */
+    background-size: cover; /* Ensures the background covers the entire element */
+    background-repeat: no-repeat; /* Prevents background image repetition */
+    background-attachment: fixed; /* Fixes background position during scroll */
+    min-height: 100vh; /* Ensures the body always takes at least the full viewport height */
+    display: flex; /* Uses flexbox for layout, allowing content to stretch vertically */
+    flex-direction: column; /* Stacks children vertically */
+    color: #e2e8f0; /* Light Text Color: A light blue-gray for good contrast on dark background */
+    overflow-x: hidden; /* Prevents horizontal scrolling, especially important for animations */
+}
+
+/* Container Card Styling: Applies to general content cards like 'About Us' */
+.container-card {
+    /* Background Gradient: A subtle linear gradient for content cards, adding depth */
+    /* Color 1: #202633 - Dark blue-gray */
+    /* Color 2: #151820 - Even darker blue-gray */
+    background: linear-gradient(145deg, #202633, #151820);
+    border-radius: 1.25rem; /* Slightly rounded corners for a soft look */
+    padding: 3rem; /* Generous internal padding for content spacing */
+    /* Box Shadow: Creates a multi-layered shadow with a subtle purple glow */
+    /* Shadow 1: 0 15px 30px rgba(0, 0, 0, 0.6) - Dark, strong shadow for depth */
+    /* Shadow 2: 0 0 40px rgba(127, 56, 223, 0.15) - Ethereal, light purple glow */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6), 0 0 40px rgba(127, 56, 223, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12); /* Subtle light border for definition */
+    position: relative; /* Allows positioning of child pseudo-elements */
+    overflow: hidden; /* Clips content and shadows within the rounded corners */
+    backdrop-filter: blur(12px); /* Adds a strong blur effect to background behind the card (glassmorphism) */
+    -webkit-backdrop-filter: blur(12px); /* Vendor prefix for Safari */
+}
+
+/* Primary Button Styles: Main call-to-action button */
+.btn-primary {
+    background-color: #8B5CF6; /* Vibrant Purple */
+    color: white; /* White text for high contrast */
+    padding: 0.4rem 1rem; /* Compact padding */
+    border-radius: 0.625rem; /* Rounded corners */
+    font-weight: 700; /* Bold text */
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth transition for hover effects */
+    border: none; /* No border for a cleaner look */
+    cursor: pointer; /* Indicates interactivity */
+    box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3); /* Subtle purple glow shadow */
+    position: relative; /* Base for potential pseudo-elements for effects */
+    overflow: hidden; /* Ensures inner effects are clipped */
+}
+/* Primary Button Hover State */
+.btn-primary:hover {
+    background-color: #7C3AED; /* Darker purple on hover */
+    transform: translateY(-2px) scale(1.01); /* Slight lift and subtle scale for engagement */
+    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.5), 0 0 25px rgba(139, 92, 246, 0.3); /* Enhanced purple glow */
+}
+
+/* Secondary Button Styles: Alternative action button */
+.btn-secondary {
+    background-color: #2F3645; /* Dark blue-gray */
+    color: #E2E8F0; /* Light blue-gray text */
+    padding: 0.85rem 2rem; /* Larger padding than primary button */
+    border-radius: 0.625rem; /* Rounded corners */
+    font-weight: 700; /* Bold text */
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth transition */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Light, subtle border */
+    cursor: pointer; /* Indicates interactivity */
+}
+/* Secondary Button Hover State */
+.btn-secondary:hover {
+    background-color: #404A5D; /* Slightly lighter blue-gray on hover */
+    transform: translateY(-2px) scale(1.01); /* Slight lift and subtle scale */
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); /* Refined darker shadow */
+    color: white; /* White text on hover */
+    border-color: rgba(255, 255, 255, 0.2); /* Border brightens on hover */
+}
+
+/* Navigation Link Styles: Applies to links in the header navigation */
+.nav-link {
+    color: #CBD5E0; /* Light gray for navigation links */
+    transition: color 0.3s ease, transform 0.2s ease; /* Smooth transitions for color and slight lift */
+    font-weight: 500; /* Medium font weight */
+    position: relative; /* Required for the underline pseudo-element */
+}
+/* Navigation Link Underline Effect */
+.nav-link::after {
+    content: ''; /* Empty content for a visual line */
+    position: absolute; /* Positions relative to the parent link */
+    left: 50%; /* Starts from the center */
+    bottom: -5px; /* Positions slightly below the text */
+    width: 0; /* Initially hidden */
+    height: 2px; /* Thickness of the underline */
+    background: linear-gradient(to right, #8B5CF6, #6D28D9); /* Purple gradient for the underline */
+    transition: width 0.3s ease, left 0.3s ease; /* Smooth animation for width and position */
+}
+/* Navigation Link Hover State */
+.nav-link:hover {
+    color: #ffffff; /* White text on hover */
+    transform: translateY(-1px); /* Subtle upward lift */
+}
+/* Navigation Link Underline Hover Effect */
+.nav-link:hover::after {
+    width: 100%; /* Expands to full width on hover */
+    left: 0; /* Slides from center to left edge */
+}
+
+/* Custom Message Box Overlay: For displaying alerts/messages to the user */
+.message-box-overlay {
+    position: fixed; /* Fixed position relative to the viewport */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Dark, semi-transparent black overlay */
+    display: flex; /* Uses flexbox to center content */
+    justify-content: center; /* Centers horizontally */
+    align-items: center; /* Centers vertically */
+    z-index: 1000; /* High z-index to appear above all content */
+    opacity: 0; /* Initially hidden */
+    visibility: hidden; /* Ensures it's not interactive when hidden */
+    transition: opacity 0.3s ease, visibility 0.3s ease; /* Smooth fade-in/out transition */
+}
+/* Message Box Overlay Visible State */
+.message-box-overlay.visible {
+    opacity: 1; /* Fully visible */
+    visibility: visible; /* Becomes interactive */
+}
+/* Message Box Content: The actual dialog box */
+.message-box-content {
+    background: linear-gradient(145deg, #202633, #151820); /* Background matching container cards */
+    color: #e2e8f0; /* Light text color */
+    padding: 2.5rem; /* Generous padding */
+    border-radius: 1rem; /* Rounded corners */
+    text-align: center; /* Centers text within the box */
+    /* Box Shadow: Enhanced shadow with a subtle purple glow */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(127, 56, 223, 0.1);
+    max-width: 90%; /* Responsive width, max 90% of parent */
+    width: 450px; /* Fixed width on larger screens */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* More visible light border */
+    backdrop-filter: blur(10px); /* Glassmorphism effect */
+    -webkit-backdrop-filter: blur(10px); /* Vendor prefix for Safari */
+}
+/* Message Box Button */
+.message-box-content button {
+    margin-top: 2rem; /* More space */
+    background-color: #8B5CF6; /* Primary button purple */
+    color: white; /* White text */
+    padding: 0.75rem 1.5rem; /* Standard button padding */
+    border-radius: 0.5rem; /* Rounded corners */
+    font-weight: 700; /* Bold text */
+    cursor: pointer; /* Indicates interactivity */
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; /* Smooth transitions */
+}
+/* Message Box Button Hover State */
+.message-box-content button:hover {
+    background-color: #7C3AED; /* Darker purple on hover */
+    transform: translateY(-1px); /* Subtle lift */
+    box-shadow: 0 3px 8px rgba(139, 92, 246, 0.3); /* Subtle purple shadow */
+}
+
+/* Keyframe Animation: Slide In From Top */
+@keyframes slideInFromTop {
+    from {
+        opacity: 0; /* Starts transparent */
+        transform: translateY(-20px); /* Starts slightly above its final position */
+    }
+    to {
+        opacity: 1; /* Ends fully opaque */
+        transform: translateY(0); /* Ends at its natural position */
+    }
+}
+
+/* Base Styles for Elements with Scroll Animation */
+.animate-on-scroll {
+    opacity: 0; /* Initially hidden */
+    transform: translateY(-20px); /* Initially moved slightly up */
+    transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth transition for fade and slide */
+}
+
+/* State for Elements When Animation is Triggered */
+.animate-on-scroll.animate-in {
+    animation: slideInFromTop 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* Applies the slide-in animation */
+}
+
+/* Staggered Animation Delays for Feature Boxes */
+/* Applies a sequential delay to each feature box for a more dynamic entrance effect */
+.feature-box.animate-on-scroll:nth-child(1) { animation-delay: 0s; }
+.feature-box.animate-on-scroll:nth-child(2) { animation-delay: 0.1s; }
+.feature-box.animate-on-scroll:nth-child(3) { animation-delay: 0.2s; }
+.feature-box.animate-on-scroll:nth-child(4) { animation-delay: 0.3s; }
+.feature-box.animate-on-scroll:nth-child(5) { animation-delay: 0.4s; }
+.feature-box.animate-on-scroll:nth-child(6) { animation-delay: 0.5s; }
+
+/* Innovative Feature Box Styling: Base styles for individual feature cards */
+.feature-box {
+    position: relative; /* Enables absolute positioning for pseudo-elements */
+    overflow: hidden; /* Hides content outside the box, important for inner glow */
+    background-color: rgba(31, 41, 55, 0.4); /* Transparent dark blue-gray background */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Very subtle light border */
+    /* Box Shadow: Creates a multi-layer shadow with an inner glow */
+    /* Shadow 1: 0 4px 15px rgba(0, 0, 0, 0.3) - Standard outer shadow */
+    /* Shadow 2: inset 0 0 10px rgba(255, 255, 255, 0.02) - Subtle inner glow */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.02);
+    transition: all 0.4s ease-out; /* Smoother transition for hover effects */
+    transform-style: preserve-3d; /* Preserves 3D transformations for children */
+    perspective: 1200px; /* Establishes a 3D perspective for child elements */
+    z-index: 1; /* Ensures it's above other elements on the same layer */
+    border-radius: 1rem; /* Rounded corners */
+    backdrop-filter: blur(5px); /* Subtle glassmorphism blur effect */
+    -webkit-backdrop-filter: blur(5px); /* Vendor prefix for Safari */
+
+    /* Default Flexbox Properties: For layout of content within the box */
+    display: flex;
+    flex-direction: column; /* Stacks children vertically */
+    align-items: flex-start; /* Aligns content to the left */
+    text-align: left; /* Ensures text aligns to the left */
+}
+
+/* Feature Box Dotted Background Pattern */
+.feature-box::before {
+    content: ''; /* Empty content for a visual pattern */
+    position: absolute; /* Positions relative to the feature box */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(#ffffff0a 1px, transparent 1px); /* Very subtle dotted pattern */
+    background-size: 20px 20px; /* Size of the dots */
+    opacity: 0.1; /* Very faint */
+    z-index: 0; /* Positions behind the main content */
+    pointer-events: none; /* Ensures the pattern doesn't interfere with clicks */
+}
+
+/* Feature Box Hover State */
+.feature-box:hover {
+    transform: translateY(-3px) scale(1.005); /* Subtle lift and slight scale on hover */
+    /* Box Shadow: Stronger shadows with a more pronounced purple glow on hover */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 30px rgba(139, 92, 246, 0.2);
+    z-index: 2; /* Brings the hovered box slightly forward */
+    border-color: rgba(139, 92, 246, 0.2); /* Subtle purple highlight on the border */
+}
+
+/* Inner Pulsating Gradient Background for Feature Boxes */
+.feature-inner-glow {
+    content: ''; /* Empty content for the visual glow */
+    position: absolute; /* Positions relative to the feature box */
+    top: -50%; /* Starts off-center for rotation effect */
+    left: -50%; /* Starts off-center for rotation effect */
+    width: 200%; /* Larger than the box to ensure full coverage during rotation */
+    height: 200%; /* Larger than the box */
+    /* Radial Gradient: Subtle purple glow radiating from the center */
+    background: radial-gradient(circle at center, rgba(139, 92, 246, 0.2) 0%, rgba(109, 40, 217, 0.1) 25%, transparent 65%);
+    animation: rotateAndPulse 18s linear infinite; /* Applies continuous rotation and pulse animation */
+    transition: opacity 0.6s; /* Smooth opacity transition */
+    opacity: 0; /* Initially hidden */
+    z-index: 0; /* Positions behind the actual content */
+}
+
+/* Feature Box Inner Glow Hover State */
+.feature-box:hover .feature-inner-glow {
+    opacity: 0.5; /* Becomes more visible on hover */
+}
+
+/* Keyframe Animation: Rotate and Pulse for Inner Glow */
+@keyframes rotateAndPulse {
+    0% { transform: translate(0, 0) rotate(0deg); opacity: 0.1; }
+    25% { transform: translate(-25%, -25%) rotate(90deg); opacity: 0.3; }
+    50% { transform: translate(-50%, -50%) rotate(180deg); opacity: 0.1; }
+    75% { transform: translate(-25%, -25%) rotate(270deg); opacity: 0.3; }
+    100% { transform: translate(0, 0) rotate(360deg); opacity: 0.1; }
+}
+
+/* Ensure Content Stays Flat and Pops Out in 3D Space */
+/* Applies a Z-axis translation to content for a subtle pop-out effect in 3D */
+.feature-box h3, .feature-box p, .feature-box svg {
+    transform: translateZ(40px); /* Lifts content 40px forward in 3D space */
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth transition for the lift */
+    position: relative; /* Ensures content is positioned above the glow */
+    z-index: 1; /* Places content above the inner glow */
+}
+/* Content Lift on Feature Box Hover */
+.feature-box:hover h3, .feature-box:hover p, .feature-box:hover svg {
+    transform: translateZ(60px); /* Lifts content further forward on hover */
+}
+
+/* SVG Icon Styling for Features */
+.feature-icon {
+    width: 56px; /* Larger icon size */
+    height: 56px; /* Larger icon size */
+    margin-bottom: 1.5rem; /* Space below the icon */
+    display: block; /* Ensures it behaves as a block element */
+    transition: filter 0.3s ease; /* Smooth transition for filter effects */
+    flex-shrink: 0; /* Prevents the icon from shrinking in flex containers */
+    transform: translateY(-4px); /* Subtle initial upward lift for all icons */
+}
+/* Applying Gradient Fill to Feature Icons */
+.feature-icon-gradient {
+    fill: url(#iconGradient); /* Fills the SVG path with the defined gradient */
+}
+
+/* Feature-Specific Icon Animations on Hover */
+/* Feature 1 (Project Management) Icon Animation: Growth Effect */
+.feature-box:nth-child(1):hover .feature-icon {
+    transform: translateY(-8px) scale(1.08); /* Lifts and scales the icon */
+    animation: projectGrow 0.6s ease forwards; /* Applies the 'projectGrow' animation */
+    transform-origin: center; /* Ensures transformations originate from the center */
+}
+@keyframes projectGrow {
+    0% { transform: scale(1); } /* Starts at normal size */
+    50% { transform: scale(1.1); } /* Briefly scales up */
+    100% { transform: scale(1); } /* Returns to normal size */
+}
+
+/* Feature 2 (Real-time Communication) Icon Animation: Pulse Effect */
+.feature-box:nth-child(2):hover .feature-icon {
+    transform: translateY(-8px) scale(1.08); /* Lifts and scales the icon */
+    animation: communicationPulse 1s ease infinite; /* Applies continuous pulse animation */
+}
+@keyframes communicationPulse {
+    0%, 100% { opacity: 1; transform: scale(1); } /* Starts and ends opaque at normal size */
+    50% { opacity: 0.7; transform: scale(1.05); } /* Fades slightly and scales up in the middle */
+}
+
+/* Feature 3 (Time Tracking) Icon Animation: Clock Tick/Rotation Effect */
+.feature-box:nth-child(3):hover .feature-icon {
+    transform: translateY(-8px) scale(1.08); /* Lifts and scales the icon */
+    animation: timeTick 1s steps(2) infinite; /* Applies discrete rotation in steps */
+    transform-origin: center; /* Ensures rotation is from the center */
+}
+@keyframes timeTick {
+    0% { transform: rotate(0deg); } /* Starts with no rotation */
+    100% { transform: rotate(360deg); } /* Completes a full rotation */
+}
+
+/* Feature 4 (Role-Based Access) Icon Animation: Reveal/Fade Effect */
+.feature-box:nth-child(4):hover .feature-icon {
+    transform: translateY(-8px) scale(1.08); /* Lifts and scales the icon */
+    animation: roleReveal 0.8s ease forwards; /* Applies reveal animation */
+}
+@keyframes roleReveal {
+    0% { opacity: 0.5; transform: translateY(10px); } /* Starts semi-transparent and lower */
+    100% { opacity: 1; transform: translateY(0); } /* Fully opaque and at normal position */
+}
+
+/* Feature 5 (Client Portal) Icon Animation: Gear Spin Effect */
+.feature-box:nth-child(5):hover .feature-icon {
+    transform: translateY(-8px) scale(1.08); /* Lifts and scales the icon */
+    animation: gearSpin 2s linear infinite; /* Applies continuous linear rotation */
+    transform-origin: center; /* Ensures rotation is from the center */
+    filter: none; /* Ensures no conflicting filter is applied */
+}
+
+/* Feature 6 (Automated Workflows) Icon Animation: Glowing Shadows Effect */
+.feature-box:nth-child(6):hover .feature-icon {
+    transform: none; /* Resets any previous transformations */
+    /* Applies drop shadows for a glowing effect */
+    /* Shadow 1: Left-side purple glow */
+    /* Shadow 2: Right-side darker purple glow */
+    filter: drop-shadow(-5px 0px 10px rgba(139, 92, 246, 0.7))
+            drop-shadow(5px 0px 10px rgba(109, 40, 217, 0.7));
+    animation: none; /* Ensures no conflicting animation is applied */
+}
+
+/* Social Media Icon Styling */
+.social-icon-link {
+    display: inline-block; /* Allows side-by-side display */
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out, filter 0.3s ease; /* Smooth transitions */
+}
+/* Social Media Icon Hover State */
+.social-icon-link:hover {
+    transform: translateY(-3px) scale(1.15); /* Subtle lift and scale */
+    opacity: 0.9; /* Slight transparency */
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6)); /* Refined purple glow on hover */
+}
+/* Social Media Icon Fill Color */
+.social-icon-fill {
+    fill: #cbd5e0; /* Default light gray fill color */
+    transition: fill 0.2s ease-out; /* Smooth transition for fill color */
+}
+/* Social Media Icon Fill Color Hover State */
+.social-icon-link:hover .social-icon-fill {
+    fill: url(#iconGradient); /* Applies the purple gradient on hover */
+}
+
+/* About Us Section Specific Styles */
+#about-us {
+    position: relative; /* Allows positioning of overlay pseudo-element */
+    padding: 3rem; /* Internal padding */
+    border-radius: 0; /* No rounded corners, fills full width */
+    box-shadow: none; /* No shadow */
+    border: none; /* No border */
+    backdrop-filter: none; /* No blur effect */
+    -webkit-backdrop-filter: none; /* No blur effect for Safari */
+    overflow: hidden; /* Ensures content and background are clipped */
+    background-image: url('https://media.tenor.com/f0xJ9X7t7kIAAAAC/coding.gif'); /* Sets GIF as background image */
+    background-size: cover; /* Covers the entire section */
+    background-position: center; /* Centers the image */
+    background-repeat: no-repeat; /* Prevents repetition */
+}
+
+/* Overlay for About Us Background Image: Improves text readability */
+#about-us::before {
+    content: ''; /* Empty content for the overlay */
+    position: absolute; /* Positions absolutely within the section */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75); /* Darker semi-transparent black overlay */
+    z-index: 0; /* Positions behind the content */
+}
+
+/* Ensures content within About Us section is above the overlay */
+#about-us h2,
+#about-us p,
+#about-us .about-content-wrapper,
+#about-us .marquee-container {
+    position: relative; /* Brings content to a higher stacking context */
+    z-index: 1; /* Ensures content appears above the overlay */
+}
+
+/* New Styles for About Us Layout */
+.about-content-wrapper {
+    display: flex; /* Uses flexbox for layout */
+    flex-direction: column; /* Stacks children vertically on mobile */
+    gap: 2.5rem; /* Space between children */
+    align-items: flex-start; /* Aligns content to the left */
+}
+
+.about-text-column {
+    width: 100%; /* Full width on smaller screens */
+    max-width: 700px; /* Constrains max width */
+    padding-right: 0; /* No right padding */
+    text-align: left; /* Aligns text to the left */
+}
+
+/* Responsive Layout for About Us (Desktop): Text on Left, Animation on Right */
+@media (min-width: 1024px) {
+    .about-content-wrapper {
+        flex-direction: row; /* Arranges children horizontally on desktop */
+        justify-content: space-between; /* Distributes space between text and GIF */
+        align-items: center; /* Vertically aligns items in the center */
+    }
+    .about-text-column {
+        flex: 1; /* Allows text column to grow and shrink */
+        max-width: 70%; /* Takes up to 70% of the available width */
+    }
+    .productivity-gif-container {
+        flex: 1; /* Allows GIF container to grow and shrink */
+        display: flex;
+        justify-content: center; /* Centers GIF horizontally within its container */
+        align-items: center; /* Centers GIF vertically within its container */
+        max-width: 30%; /* Takes up to 30% of the available width */
+    }
+}
+
+/* Override Global Section Padding for About Us */
+#about-us {
+    padding-left: 4rem; /* Reduced left padding */
+    padding-right: 8rem; /* Retained larger right padding */
+}
+@media (min-width: 1024px) {
+    #about-us {
+        padding-left: 6rem; /* Even further left on desktop */
+        padding-right: 6rem; /* Adjusted right padding to accommodate GIF */
+    }
+    .about-text-column {
+        /* Calculates dynamic width to prevent overflow with GIF */
+        max-width: calc(100% - 300px - 2.5rem);
+        flex-shrink: 1; /* Allows the text column to shrink if needed */
+    }
+    .productivity-gif-container {
+        width: 300px; /* Optimized fixed width for desktop GIF */
+    }
+}
+@media (max-width: 767px) {
+    #about-us {
+        padding-left: 2rem; /* Smaller padding on mobile */
+        padding-right: 2rem; /* Smaller padding on mobile */
+    }
+}
+
+/* No Staggered Delay for Contact Section: A single animation for the whole section */
+#contact .animate-on-scroll {
+    animation-delay: 0.3s; /* Small delay for the contact section's entrance animation */
+}
+
+/* Heading Animations: Applies to H1 and H2 elements with scroll animation */
+h1.animate-on-scroll, h2.animate-on-scroll {
+    animation: slideInFromTop 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* Applies slide-in animation */
+}
+h1.animate-on-scroll { animation-delay: 0.05s; } /* Slight delay for H1 */
+h2.animate-on-scroll { animation-delay: 0.1s; } /* Slight delay for H2 (section headings) */
+
+/* Footer Specific Styling: Overall footer appearance */
+.main-footer {
+    background-color: #0a0a0a; /* Dark background matching body base color */
+    padding-top: 3rem; /* Reduced top padding to shorten height */
+    padding-bottom: 1.5rem; /* Reduced bottom padding to shorten height */
+}
+
+/* Footer Grid Layout: Defines the column structure for footer links */
+.footer-grid {
+    display: grid; /* Uses CSS Grid for layout */
+    grid-template-columns: repeat(5, 1fr); /* Creates 5 equal-width columns */
+    gap: 2rem; /* Space between grid items */
+    justify-items: start; /* Aligns content to the start (left) of each grid cell */
+}
+
+/* Footer Heading Styles */
+.footer-heading {
+    color: #ffffff; /* White text for headings */
+    font-weight: 700; /* Bold font */
+    font-size: 0.875rem; /* Small font size (text-sm) */
+    letter-spacing: 0.05em; /* Wider letter spacing (tracking-wider) */
+    text-transform: uppercase; /* Uppercase text */
+    margin-bottom: 1.25rem; /* Space below the heading */
+}
+
+/* Footer Link List Styles */
+.footer-link-list {
+    list-style: none; /* Removes default list bullets */
+    padding: 0; /* Removes default padding */
+    margin: 0; /* Removes default margin */
+}
+
+/* Footer List Item Spacing */
+.footer-link-list li {
+    margin-bottom: 0.75rem; /* Space between individual links */
+}
+
+/* Footer Link Styles */
+.footer-link-list a {
+    color: #a0aec0; /* Lighter gray for links */
+    font-size: 0.95rem; /* Slightly larger font for readability */
+    transition: color 0.2s ease; /* Smooth color transition on hover */
+    text-decoration: none; /* Removes default underline */
+}
+
+/* Footer Link Hover State */
+.footer-link-list a:hover {
+    color: #ffffff; /* White text on hover */
+}
+
+/* Vertical Line Next to Footer Sections */
+.footer-section-with-line {
+    position: relative; /* Allows positioning of the line pseudo-element */
+    padding-left: 1.25rem; /* Creates space for the vertical line */
+}
+
+.footer-section-with-line::before {
+    content: ''; /* Empty content for the visual line */
+    position: absolute; /* Positions absolutely within the section */
+    left: 0; /* Positions at the left edge */
+    top: 0;
+    height: 100%; /* Line spans the full height of the content */
+    width: 1px; /* Thickness of the line */
+    background-color: rgba(255, 255, 255, 0.1); /* Subtle light gray with transparency */
+}
+
+/* Footer Brand Section: Contains the logo and legal links/copyright */
+.footer-brand-section {
+    display: flex; /* Uses flexbox for layout */
+    flex-direction: column; /* Stacks children vertically */
+    align-items: flex-start; /* Aligns content to the left */
+    margin-top: 4rem; /* Space above this section */
+}
+
+/* Footer Logo (RemoteTeamPro text) */
+.footer-logo {
+    font-size: 5rem; /* Much larger font size for prominent display */
+    font-weight: 800; /* Extra bold font weight */
+    color: #ffffff; /* White color */
+    margin-bottom: 2.5rem; /* Increased space below the logo */
+    line-height: 1; /* Adjusts line height to prevent excessive vertical space */
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3); /* Subtle text shadow for depth */
+}
+
+/* Footer Button Styles (Example, not currently in use but defined) */
+.footer-button {
+    display: block; /* Takes full width */
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-align: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    margin-bottom: 1rem;
+}
+.footer-button.solid {
+    background-color: #38a169; /* Example green for solid button */
+    color: white;
+    border: 1px solid #38a169;
+}
+.footer-button.solid:hover {
+    background-color: #2f855a;
+    border-color: #2f855a;
+}
+.footer-button.outline {
+    background-color: transparent;
+    color: #a0aec0; /* Grey text */
+    border: 1px solid #a0aec0; /* Grey border */
+}
+.footer-button.outline:hover {
+    background-color: rgba(160, 174, 192, 0.1); /* Subtle transparent background on hover */
+    border-color: #ffffff; /* White border on hover */
+    color: #ffffff; /* White text on hover */
+}
+
+/* Footer Legal Links Section */
+.footer-legal-links {
+    margin-top: 2rem; /* Space above legal links */
+    text-align: left; /* Aligns text to the left */
+}
+
+/* Individual Footer Legal Link Styles */
+.footer-legal-links a {
+    display: block; /* Each link on its own line */
+    color: #a0aec0; /* Light gray text */
+    font-size: 0.875rem; /* Small font size (text-sm) */
+    margin-bottom: 0.5rem; /* Space between links */
+    text-decoration: none; /* Removes default underline */
+    transition: color 0.2s ease; /* Smooth color transition */
+}
+
+/* Footer Legal Link Hover State */
+.footer-legal-links a:hover {
+    color: #ffffff; /* White text on hover */
+}
+
+/* Footer Copyright Text */
+.footer-copyright {
+    color: #a0aec0; /* Light gray text */
+    font-size: 0.875rem; /* Small font size (text-sm) */
+    margin-top: 1.5rem; /* Space above copyright text */
+    text-align: left; /* Aligns text to the left */
+}
+
+/* Responsive Adjustments for Footer */
+@media (max-width: 1023px) { /* Styles for tablet and smaller screens */
+    .footer-grid {
+        grid-template-columns: repeat(2, 1fr); /* Changes to 2 columns on tablet */
+    }
+    .footer-section-with-line {
+        padding-left: 0.75rem; /* Adjusts padding for smaller screens */
+    }
+    .footer-brand-section {
+        grid-column: span 2; /* Brand section spans 2 columns */
+        margin-top: 2rem; /* Reduced top margin */
+    }
+    .footer-heading {
+        margin-bottom: 0.75rem; /* Reduced bottom margin */
+    }
+    .footer-link-list li {
+        margin-bottom: 0.5rem; /* Reduced space between links */
+    }
+}
+
+@media (max-width: 767px) { /* Styles for mobile screens */
+    .footer-grid {
+        grid-template-columns: 1fr; /* Changes to 1 column on mobile */
+    }
+    .footer-section-with-line {
+        padding-left: 0; /* Removes padding for the line on mobile */
+    }
+    .footer-section-with-line::before {
+        display: none; /* Hides the vertical line on mobile */
+    }
+    .footer-brand-section {
+        grid-column: span 1; /* Brand section spans 1 column */
+        margin-top: 2rem; /* Retains reduced top margin */
+        align-items: center; /* Centers content on mobile */
+    }
+    .footer-copyright,
+    .footer-legal-links {
+        text-align: center; /* Centers legal and copyright text on mobile */
+    }
+}
+
+/* FAQ Section Specific Styles */
+.faq-section-container {
+    /* Background: Slightly transparent dark gray, matching the card aesthetic */
+    background-color: rgba(17, 17, 17, 0.8);
+    border-radius: 1.25rem; /* Rounded corners for the entire section */
+    padding: 3rem; /* Internal padding */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7); /* Deep shadow for depth */
+    margin-top: 4rem; /* Space from the previous section */
+    margin-bottom: 4rem; /* Space below the section */
+    display: flex; /* Uses flexbox to center content horizontally */
+    justify-content: center; /* Centers content horizontally */
+    align-items: center; /* Centers content vertically */
+    position: relative; /* Allows positioning of inner elements */
+    overflow: hidden; /* Hides overflowing content */
+}
+@media (min-width: 1024px) {
+    .faq-section-container {
+        padding-left: 4rem; /* Increased horizontal padding on larger screens */
+        padding-right: 4rem; /* Increased horizontal padding on larger screens */
+    }
+}
+
+/* Individual FAQ Item Styles */
+.faq-item {
+    background-color: #1a1a1a; /* Darker background than the container */
+    border-radius: 0.75rem; /* Rounded corners for each item */
+    margin-bottom: 1rem; /* Space between items */
+    overflow: hidden; /* Clips content within the rounded corners */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); /* Subtle shadow for each item */
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Very subtle light border */
+}
+
+/* FAQ Question Button Styles */
+.faq-question {
+    width: 100%; /* Takes full width */
+    padding: 1.25rem 1.5rem; /* Adjusted padding to match design */
+    background: transparent; /* Transparent background */
+    border: none; /* No border */
+    text-align: left; /* Aligns text to the left */
+    color: #e2e8f0; /* Light text color */
+    font-size: 1.05rem; /* Slightly smaller font for questions */
+    font-weight: 500; /* Medium font weight */
+    cursor: pointer; /* Indicates interactivity */
+    display: flex; /* Uses flexbox for alignment of text and icon */
+    justify-content: space-between; /* Pushes text to left, icon to right */
+    align-items: center; /* Vertically aligns text and icon */
+    transition: background-color 0.3s ease; /* Smooth background transition */
+}
+/* FAQ Question Hover State */
+.faq-question:hover {
+    background-color: rgba(255, 255, 255, 0.03); /* Very subtle light hover background */
+}
+/* FAQ Question Icon (Plus) */
+.faq-question::after {
+    content: ''; /* Empty content for SVG icon */
+    width: 24px; /* Icon size */
+    height: 24px; /* Icon size */
+    /* Inline SVG for a plus icon with purple stroke */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.5' stroke='%238B5CF6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 4.5v15m7.5-7.5h-15' /%3E%3C/svg%3E");
+    background-repeat: no-repeat; /* Prevents icon repetition */
+    background-position: center; /* Centers the icon */
+    transition: transform 0.3s ease; /* Smooth rotation transition */
+}
+/* FAQ Question Active (Open) State Icon (Minus) */
+.faq-question.active::after {
+    /* Inline SVG for a minus icon with purple stroke */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.5' stroke='%238B5CF6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 12h-15' /%3E%3C/svg%3E");
+    transform: rotate(0deg); /* Ensures no rotation for the minus icon */
+}
+
+/* FAQ Answer Content Styles */
+.faq-answer {
+    max-height: 0; /* Initially hidden (collapsed) */
+    overflow: hidden; /* Hides overflowing content */
+    transition: max-height 0.4s ease-out, padding 0.4s ease-out; /* Smooth transition for expand/collapse */
+    padding: 0 1.5rem; /* Initial horizontal padding */
+    color: #c7d2fe; /* Lighter purple-blue text for answers */
+    font-size: 0.95rem; /* Slightly smaller font for answers */
+    line-height: 1.6; /* Improved line spacing for readability */
+}
+/* FAQ Answer Open State */
+/* Removed fixed max-height here. JavaScript will set this dynamically. */
+.faq-answer.open {
+    padding: 0.5rem 1.5rem 1.25rem 1.5rem; /* Final padding when expanded */
+}
+
+/* Hero Section Background Styles */
+#hero {
+    position: relative; /* Allows positioning of overlay */
+    overflow: hidden; /* Hides overflowing content */
+    min-height:48vh; /* Minimum height for the hero section */
+    display: flex; /* Uses flexbox to center content */
+    align-items: center; /* Centers vertically */
+    justify-content: center; /* Centers horizontally */
+    text-align: center; /* Centers text by default */
+    background: #0a0a0a; /* Base dark background */
+    z-index: 0; /* Positions behind the header */
+    background-image: url('https://images.unsplash.com/photo-1741796127170-eacd847682e7?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); /* Placeholder background image */
+    background-size: cover; /* Covers the entire section */
+    background-position: center; /* Centers the image */
+    background-repeat: no-repeat; /* Prevents repetition */
+}
+
+/* Hero Background Overlay for Readability */
+.hero-background-overlay {
+    position: absolute; /* Positions absolutely within the hero section */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Linear Gradient: Fades from dark to lighter dark, then back to dark */
+    background: linear-gradient(90deg, rgba(10, 10, 10, 0.9) 0%, rgba(10, 10, 10, 0.5) 50%, rgba(10, 10, 10, 0.9) 100%);
+    z-index: 1; /* Positions above the background image */
+}
+
+/* Hero Content Wrapper */
+.hero-content-wrapper {
+    position: relative; /* Brings content to a higher stacking context */
+    z-index: 2; /* Positions above the overlay */
+    display: flex; /* Uses flexbox for layout */
+    flex-direction: column; /* Stacks children vertically */
+    align-items: flex-start; /* Aligns content to the left */
+    text-align: left; /* Ensures text within wrapper is left-aligned */
+    max-width: 1600px; /* Max width for content */
+    width: 100%; /* Full width up to max-width */
+    padding: 4rem 2rem 3rem 2rem; /* Responsive padding */
+}
+
+/* Ensures text elements within hero are left-aligned */
+.hero-content-wrapper h1,
+.hero-content-wrapper p {
+    text-align: left;
+}
+
+/* Custom Line-Height for Hero Title (H1) */
+.hero-title-h1 {
+    line-height: 1.15; /* Adjusted line height to prevent text collision */
+}
+
+/* Responsive Layout for Hero Section (Large Screens) */
+@media (min-width: 1024px) {
+    .hero-content-wrapper {
+        flex-direction: row; /* Arranges content and image side-by-side */
+        justify-content: space-between; /* Distributes space evenly */
+        align-items: center; /* Vertically centers items */
+    }
+    .hero-text-content {
+        flex: 1; /* Allows text content to grow and shrink */
+        max-width: 50%; /* Takes up to 50% of the available width */
+    }
+    .hero-image-container {
+        flex: 1; /* Allows image container to grow and shrink */
+        padding-left: 2rem; /* Space between text and image */
+        max-width: 50%; /* Takes up to 50% of the available width */
+        display: flex;
+        justify-content: flex-end; /* Aligns image to the right */
+    }
+}
+
+/* Curved Navbar Specific Styles */
+header {
+    width: 100%; /* Full width */
+    position: fixed; /* Fixed position, stays at the top */
+    top: 0;
+    left: 0;
+    z-index: 20; /* High z-index to appear above most content */
+    padding: 1.25rem 0; /* Vertical padding for the entire header */
+}
+
+.navbar-container {
+    display: flex; /* Uses flexbox for alignment */
+    justify-content: space-between; /* Distributes space between logo and nav */
+    align-items: center; /* Vertically aligns items */
+    max-width: 100%; /* Full width up to max-width */
+    margin: 0 auto; /* Centers the container horizontally */
+    padding-left: 6rem; /* Increased left padding for alignment */
+    padding-right: 6rem; /* Increased right padding for alignment */
+}
+
+.curved-navbar {
+    background: rgba(17, 24, 39, 0.5); /* Semi-transparent dark blue-gray background */
+    border-radius: 2.5rem; /* Highly rounded corners for a pill-like effect */
+    backdrop-filter: blur(8px); /* Subtle blur for glassmorphism */
+    -webkit-backdrop-filter: blur(8px); /* Vendor prefix for Safari */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Softer shadow for floating effect */
+    padding: 0.75rem 1.5rem; /* Padding inside the nav bar */
+    display: flex; /* Uses flexbox to center nav items */
+    justify-content: center; /* Centers items horizontally */
+    align-items: center; /* Centers items vertically */
+    gap: 2rem; /* Space between nav links and button */
+}
+
+.curved-navbar nav {
+    flex-grow: 1; /* Allows nav links to take available space */
+    display: flex;
+    justify-content: center; /* Centers navigation links */
+    align-items: center; /* Vertically aligns nav links */
+}
+
+/* Universal Horizontal Padding for Sections */
+section {
+    padding-left: 8rem; /* Consistent large left padding for sections */
+    padding-right: 8rem; /* Consistent large right padding for sections */
+}
+@media (min-width: 1024px) {
+    section {
+        padding-left: 10rem; /* Even larger padding on desktop */
+        padding-right: 10rem; /* Even larger padding on desktop */
+    }
+}
+@media (max-width: 767px) { /* Adjust for smaller screens (mobile) */
+    section {
+        padding-left: 2rem; /* Smaller padding on mobile */
+        padding-right: 2rem; /* Smaller padding on mobile */
+    }
+}
+
+/* Contact Section Specific Styles */
+.contact-section-container {
+    /* Background: Dark background with a subtle blue radial gradient from the right */
+    background: radial-gradient(at 80% 50%, rgba(50, 0, 180, 0.2), transparent 60%), #0d0d0d;
+    border-radius: 1.25rem; /* Rounded corners */
+    padding: 4rem 0; /* Vertical padding, no horizontal padding here */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7); /* Deep shadow */
+    margin-top: 4rem; /* Space from previous section */
+    margin-bottom: 4rem; /* Space below the section */
+    display: flex; /* Uses flexbox to center content horizontally */
+    justify-content: center; /* Centers content horizontally */
+    align-items: center; /* Centers content vertically */
+    position: relative; /* Allows positioning of inner elements */
+    overflow: hidden; /* Hides overflowing content */
+}
+
+/* Contact Content Wrapper: Defines the grid layout for text and form */
+.contact-content-wrapper {
+    display: grid; /* Uses CSS Grid */
+    grid-template-columns: 1fr; /* Single column on mobile */
+    gap: 4rem; /* Space between grid items */
+    align-items: center; /* Vertically aligns items */
+    max-width: 1200px; /* Max width for content */
+    width: 100%; /* Full width up to max-width */
+    padding: 0 2rem; /* Inner horizontal padding for content */
+}
+@media (min-width: 1024px) {
+    .contact-content-wrapper {
+        grid-template-columns: 1.2fr 1fr; /* Text column wider than form column on desktop */
+        padding: 0 4rem; /* Increased inner padding on desktop */
+    }
+}
+
+/* Contact Text Column Styles */
+.contact-text-column {
+    text-align: left; /* Aligns text to the left */
+    color: #e2e8f0; /* Light text color */
+}
+/* Contact Tag (e.g., "Contact Us") */
+.contact-text-column .tag {
+    font-size: 0.75rem; /* Extra small font (text-xs) */
+    font-weight: 600; /* Semi-bold font (font-semibold) */
+    color: #a0aec0; /* Gray text (text-gray-400) */
+    text-transform: uppercase; /* Uppercase text */
+    letter-spacing: 0.05em; /* Wider letter spacing (tracking-wider) */
+    background-color: #1a1a1a; /* Dark background */
+    padding: 0.25rem 0.75rem; /* Padding for the tag pill */
+    border-radius: 9999px; /* Fully rounded corners (rounded-full) */
+    margin-bottom: 1rem; /* Space below the tag */
+    display: inline-block; /* Allows padding and background */
+}
+/* Contact Section Heading (H2) */
+.contact-text-column h2 {
+    font-size: 3rem; /* Large font size (text-5xl) */
+    font-weight: 800; /* Extra bold font (font-extrabold) */
+    color: #ffffff; /* White text */
+    margin-bottom: 1.5rem; /* Space below heading */
+    line-height: 1.1; /* Adjusted line height */
+}
+/* Contact Section Paragraph (P) */
+.contact-text-column p {
+    font-size: 1.125rem; /* Medium font size (text-lg) */
+    color: #a0aec0; /* Gray text (text-gray-400) */
+    line-height: 1.6; /* Relaxed line spacing (leading-relaxed) */
+    margin-bottom: 2rem; /* Space below paragraph */
+}
+/* Contact "Search FAQs" Button */
+.contact-text-column .btn-faq {
+    background-color: transparent; /* Transparent background */
+    color: #a0aec0; /* Gray text (text-gray-400) */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle light border */
+    padding: 0.75rem 2rem; /* Standard padding */
+    border-radius: 0.5rem; /* Rounded corners */
+    font-weight: 600; /* Semi-bold font */
+    transition: all 0.3s ease; /* Smooth transitions */
+    cursor: pointer; /* Indicates interactivity */
+}
+/* Contact "Search FAQs" Button Hover State */
+.contact-text-column .btn-faq:hover {
+    background-color: rgba(255, 255, 255, 0.05); /* Subtle transparent background on hover */
+    border-color: rgba(255, 255, 255, 0.2); /* Border brightens on hover */
+    color: #ffffff; /* White text on hover */
+}
+
+/* Contact Form Card Styles */
+.contact-form-card {
+    background-color: rgba(31, 41, 55, 0.4); /* Transparent dark blue-gray background */
+    border-radius: 1.25rem; /* Rounded corners */
+    padding: 2rem; /* Internal padding */
+    /* Box Shadow: Subtle shadow with a hint of purple glow */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 0 20px rgba(127, 56, 223, 0.1);
+    position: relative; /* Allows z-index positioning */
+    z-index: 10; /* Higher z-index to appear above background */
+    backdrop-filter: blur(5px); /* Glassmorphism blur effect */
+    -webkit-backdrop-filter: blur(5px); /* Vendor prefix for Safari */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Subtle light border */
+}
+
+/* Contact Form Input Field Styles */
+.contact-form-card input[type="text"],
+.contact-form-card input[type="email"],
+.contact-form-card select,
+.contact-form-card textarea {
+    width: 100%; /* Full width */
+    padding: 0.7rem 1rem; /* Padding inside input fields */
+    margin-bottom: 0.8rem; /* Space between fields */
+    border-radius: 0.5rem; /* Rounded input fields */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Light border */
+    background-color: rgba(26, 32, 44, 0.6); /* Transparent dark background for inputs */
+    color: #e2e8f0; /* Light text color for input */
+    font-size: 0.95rem; /* Slightly smaller font size */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions for focus */
+}
+/* Contact Form Input Focus State */
+.contact-form-card input:focus,
+.contact-form-card select:focus,
+.contact-form-card textarea:focus {
+    outline: none; /* Removes default outline */
+    border-color: #8B5CF6; /* Violet border on focus */
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2); /* Subtle violet glow on focus */
+}
+/* Contact Form Input Placeholder Text Color */
+.contact-form-card input::placeholder,
+.contact-form-card textarea::placeholder {
+    color: #a0aec0; /* Gray placeholder text */
+}
+
+/* Contact Form Label Styles */
+.contact-form-card label {
+    color: #e2e8f0; /* Light color for labels */
+    font-size: 0.85rem; /* Slightly smaller label font */
+    margin-bottom: 0.3rem; /* Small space below label */
+}
+
+/* Contact Form Submit Button Styles */
+.contact-form-card .btn-submit {
+    background-color: #8B5CF6; /* Violet button background */
+    color: #ffffff; /* White text */
+    padding: 0.9rem 2rem; /* Standard button padding */
+    border-radius: 0.5rem; /* Rounded corners */
+    font-weight: 700; /* Bold text */
+    width: 100%; /* Full width button */
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; /* Smooth transitions */
+    cursor: pointer; /* Indicates interactivity */
+    border: none; /* No border */
+    box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3); /* Matching primary button shadow */
+}
+/* Contact Form Submit Button Hover State */
+.contact-form-card .btn-submit:hover {
+    background-color: #7C3AED; /* Darker violet on hover */
+    transform: translateY(-1px); /* Subtle lift */
+    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.5), 0 0 25px rgba(139, 92, 246, 0.3); /* Enhanced violet glow */
+}
+
+/* Privacy Policy Text Styles */
+.privacy-text {
+    font-size: 0.8rem; /* Small font size */
+    color: #a0aec0; /* Gray text */
+    margin-top: 1.5rem; /* Space above text */
+    text-align: center; /* Centered text */
+}
+/* Privacy Policy Link Styles */
+.privacy-text a {
+    color: #8B5CF6; /* Violet link color */
+    text-decoration: none; /* Removes default underline */
+    font-weight: 600; /* Semi-bold font */
+}
+/* Privacy Policy Link Hover State */
+.privacy-text a:hover {
+    text-decoration: underline; /* Underline on hover */
+}
+
+/* Marquee General Styles (Applies to both top and bottom marqees) */
+.marquee-container {
+    width: 100%; /* Full width */
+    overflow: hidden; /* Hides content outside the container for scrolling effect */
+    padding: 0.75rem 0; /* Vertical padding */
+    margin-top: -1px; /* Slightly overlaps with adjacent sections to remove gaps */
+    position: relative; /* Allows z-index positioning */
+    z-index: 5; /* Positions above hero overlay but below header */
+    /* Default Background: Linear gradient for a subtle fade effect */
+    background: linear-gradient(90deg, rgba(10, 10, 10, 0.9) 0%, rgba(10, 10, 10, 0.5) 20%, rgba(10, 10, 10, 0.5) 80%, rgba(10, 10, 10, 0.9) 100%);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); /* Subtle shadow */
+    border: none; /* No border */
+    border-radius: 0; /* No rounded corners */
+}
+
+/* Specific Styles for Marquee Below About Us Section (acting as a nested card) */
+.about-marquee-card {
+    margin-top: 2.5rem; /* Space from content above it */
+    padding: 2.5rem; /* Reduced padding for a more compact card look */
+    background: transparent; /* Transparent background */
+    box-shadow: none; /* No shadow */
+    border: none; /* No border */
+    border-radius: 1.25rem; /* Consistent rounded corners */
+    margin-left: auto; /* Centers horizontally */
+    margin-right: auto; /* Centers horizontally */
+    max-width: 100%; /* Full width up to max-width */
+    position: relative; /* Allows positioning of pseudo-element */
+    overflow: hidden; /* Clips pseudo-element */
+    z-index: 1; /* Positions above main section's background overlay */
+}
+/* Removes background and blur for the inner marquee, as it's a "card" inside another section */
+.about-marquee-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent; /* No background */
+    border-radius: 1.25rem; /* Matches container border-radius */
+    z-index: -1; /* Positions behind the content */
+    backdrop-filter: none; /* No blur effect */
+    -webkit-backdrop-filter: none; /* No blur effect for Safari */
+}
+
+/* Marquee Content: The actual scrolling text */
+.marquee-content {
+    display: inline-block; /* Allows horizontal alignment */
+    white-space: nowrap; /* Prevents text wrapping */
+    animation: marquee 55s linear infinite; /* Applies continuous linear animation */
+    font-size: 1.5rem; /* Larger font size */
+    font-weight: 600; /* Semi-bold font */
+    color: #E2E8F0; /* Light text color */
+    /* Text Shadow: Creates a subtle embossed/outline effect */
+    text-shadow:
+        -1px -1px 0 #000, /* Black stroke */
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000,
+        2px 2px 0 rgba(139, 92, 246, 0.2); /* Subtle purple shadow */
+    letter-spacing: 0.1em; /* Wide letter spacing */
+    position: relative; /* Ensures content is above pseudo-elements */
+    z-index: 2; /* Positions above pseudo-elements */
+}
+/* Keyframe Animation: Marquee Scrolling */
+@keyframes marquee {
+    0% { transform: translateX(0%); } /* Starts at original position */
+    100% { transform: translateX(-50%); } /* Scrolls half its width to create seamless loop */
+}
+/* Individual Marquee Text Item Spacing */
+.marquee-text-item {
+    display: inline-block; /* Allows side-by-side display */
+    margin-right: 2rem; /* Space between each text item */
+}
+
+/* Productivity GIF Specific Styles (for Tenor Embed) */
+.productivity-gif-container {
+    position: relative; /* Allows positioning of inner elements */
+    width: 280px; /* Adjusted width for better visibility */
+    height: auto; /* Maintains aspect ratio */
+    margin-top: 2rem; /* Space below text on small screens */
+    display: flex; /* Uses flexbox to center content */
+    justify-content: center; /* Centers horizontally */
+    align-items: center; /* Centers vertically */
+}
+@media (min-width: 768px) {
+    .productivity-gif-container {
+        width: 320px; /* Larger width on tablet */
+    }
+}
+@media (min-width: 1024px) {
+    .productivity-gif-container {
+        margin-top: 0; /* Removes top margin on desktop */
+        width: 300px; /* Optimized width for desktop */
+    }
+    .about-text-column {
+        /* Dynamic width calculation to fit alongside the GIF */
+        max-width: calc(100% - 300px - 2.5rem);
+        flex-shrink: 1; /* Allows the text column to shrink if needed */
+    }
+}
+@media (min-width: 1280px) {
+    #about-us {
+        padding-left: 8rem; /* Further increased padding on larger desktops */
+        padding-right: 8rem; /* Further increased padding on larger desktops */
+    }
+}
+
+/* Justified Text Alignment */
+.text-justify {
+    text-align: justify; /* Justifies text, creating straight edges */
+}
+
+/* Styles for Feature Box with Partial Image (e.g., User & Team Management) */
+.feature-box.partial-image-card {
+    padding: 0; /* No internal padding on the main box */
+    flex-direction: row; /* Arranges image and text side-by-side */
+    min-height: 250px; /* Ensures a minimum height for the card */
+    align-items: stretch; /* Makes children stretch to fill the height */
+}
+.feature-box.partial-image-card .image-part {
+    background-size: cover; /* Covers the image area */
+    background-position: center; /* Centers the background image */
+    flex-shrink: 0; /* Prevents the image from shrinking */
+    border-top-left-radius: 1rem; /* Matches parent border-radius */
+    border-bottom-left-radius: 1rem; /* Matches parent border-radius */
+    overflow: hidden; /* Clips image within rounded corners */
+}
+.feature-box.partial-image-card .text-part {
+    flex-grow: 1; /* Allows text part to take remaining space */
+    padding: 2rem; /* Internal padding for the text content */
+    display: flex; /* Uses flexbox for content arrangement */
+    flex-direction: column; /* Stacks content vertically */
+    justify-content: space-between; /* Distributes space, pushing bottom content down */
+    background-color: rgba(31, 41, 55, 0.4); /* Consistent transparent dark background */
+    border-top-right-radius: 1rem; /* Matches parent border-radius */
+    border-bottom-right-radius: 1rem; /* Matches parent border-radius */
+}
+
+/* Styles for Client Portal Card (Half transparent, half image with logo) */
+.client-portal-card {
+    padding: 0; /* Removes padding from the main card */
+    flex-direction: row; /* Arranges content and image side-by-side */
+    min-height: 280px; /* Ensures a good height for the card */
+    align-items: stretch; /* Makes children stretch to fill height */
+    background-color: transparent; /* Makes the main card background transparent */
+}
+.client-portal-card .content-half {
+    flex: 1; /* Takes one half for content */
+    background-color: rgba(31, 41, 55, 0.4); /* Transparent dark background for content */
+    backdrop-filter: blur(5px); /* Glassmorphism blur effect */
+    -webkit-backdrop-filter: blur(5px); /* Vendor prefix for Safari */
+    border-top-left-radius: 1rem; /* Applies radius to the left side */
+    border-bottom-left-radius: 1rem; /* Applies radius to the left side */
+    padding: 2rem; /* Internal padding */
+    display: flex; /* Uses flexbox for content arrangement */
+    flex-direction: column; /* Stacks content vertically */
+    justify-content: center; /* Centers content vertically */
+    align-items: flex-start; /* Aligns text to the left */
+    text-align: left; /* Ensures text itself is left-aligned */
+}
+.client-portal-card .image-half {
+    flex: 1; /* Takes the other half for the image */
+    background-size: cover; /* Covers the image area */
+    background-position: center; /* Centers the image */
+    border-top-right-radius: 1rem; /* Applies radius to the right side */
+    border-bottom-right-radius: 1rem; /* Applies radius to the right side */
+    overflow: hidden; /* Clips image within rounded corners */
+    position: relative; /* Allows positioning of pseudo-element */
+}
+/* Image Half Overlay (Gradient Fade) */
+.client-portal-card .image-half::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.4), transparent); /* Subtle fade from right to left */
+    pointer-events: none; /* Ensures overlay doesn't interfere with interactions */
+}
+
+/* Styles for Nested Mini-Cards (e.g., within Productivity Insights card) */
+.mini-card {
+    background-color: rgba(255, 255, 255, 0.05); /* Lighter transparent background */
+    border-radius: 0.5rem; /* Rounded corners */
+    padding: 1rem 1.25rem; /* Internal padding */
+    display: flex; /* Uses flexbox for content arrangement */
+    align-items: center; /* Vertically aligns content */
+    gap: 0.75rem; /* Space between items */
+    font-size: 0.95rem; /* Slightly smaller font size */
+    font-weight: 500; /* Medium font weight */
+    color: #cbd5e0; /* Light gray text */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Subtle light border */
+    backdrop-filter: blur(3px); /* Subtle glassmorphism blur */
+    -webkit-backdrop-filter: blur(3px); /* Vendor prefix for Safari */
+    transition: all 0.2s ease; /* Smooth transitions */
+    flex-direction: column; /* Stacks content vertically */
+    align-items: flex-start; /* Aligns content to the left */
+}
+/* Mini-Card Hover State */
+.mini-card:hover {
+    transform: translateY(-2px); /* Subtle lift */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+}
+/* Mini-Card SVG Icon Styles */
+.mini-card svg {
+    width: 20px; /* Icon size */
+    height: 20px; /* Icon size */
+    fill: url(#iconGradient); /* Fills icon with the main gradient */
+}
+
+/* Specific Icon Sizing for Enhanced Client Dashboard */
+.client-portal-card .feature-icon {
+    width: 70px; /* Slightly larger icon */
+    height: 70px; /* Slightly larger icon */
+    margin-bottom: 0; /* Removes default bottom margin */
+}

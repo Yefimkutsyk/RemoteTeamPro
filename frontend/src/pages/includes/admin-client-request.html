@@ -1,0 +1,208 @@
+<main id="admin-client-request" class="max-w-7xl mx-auto p-8 text-gray-100 font-inter">
+  <header class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+    <div>
+      <h1 class="text-3xl font-semibold text-white">Client Project Requests</h1>
+      <p class="text-gray-400 text-sm">Approve, reject, or review client-submitted project proposals.</p>
+    </div>
+
+    <div class="relative w-full md:w-72">
+      <input
+        id="reqSearch"
+        type="text"
+        placeholder="Search requests..."
+        class="px-4 py-2 pl-10 rounded-xl bg-white/5 border border-white/10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+      />
+      <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+    </div>
+  </header>
+
+  <div class="flex gap-3 mb-8 flex-wrap">
+    <button class="tab-btn active-tab" data-status="Pending">Pending</button>
+    <button class="tab-btn" data-status="Approved">Approved</button>
+    <button class="tab-btn" data-status="Rejected">Rejected</button>
+  </div>
+
+  <section id="requestsList" class="space-y-5"></section>
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-3"></div>
+
+  <!-- Review Modal -->
+  <div id="reviewModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div class="bg-gray-900 p-6 rounded-2xl w-full max-w-lg border border-gray-700">
+      <h2 class="text-xl font-semibold text-white mb-4">Add Review Comment</h2>
+      <textarea
+        id="reviewComment"
+        rows="4"
+        class="w-full rounded-lg bg-gray-800 border border-gray-700 text-gray-100 p-3 resize-none"
+        placeholder="Write your review or reason..."
+      ></textarea>
+
+      <div class="flex justify-end gap-3 mt-5">
+        <button id="cancelReview" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200">Cancel</button>
+        <button id="submitReview" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white">Submit</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<style>
+  .tab-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #d1d5db;
+    transition: all 0.2s ease;
+  }
+  .tab-btn:hover { background: rgba(255, 255, 255, 0.1); }
+  .active-tab {
+    background: rgba(168, 85, 247, 0.25);
+    border-color: #a855f7;
+    color: #fff;
+  }
+  .request-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.25rem;
+    padding: 1.75rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  .request-card:hover { background: rgba(255, 255, 255, 0.07); transform: translateY(-3px); }
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+  }
+  .status-chip.Pending { background: rgba(234,179,8,0.15); color: #facc15; }
+  .status-chip.Approved { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .status-chip.Rejected { background: rgba(239,68,68,0.15); color: #f87171; }
+  .toast {
+    display: flex; align-items: center;
+    backdrop-filter: blur(12px);
+    background: rgba(31, 41, 55, 0.9);
+    border-left: 5px solid;
+    border-radius: 0.75rem;
+    color: #f3f4f6;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    animation: fadeIn 0.3s forwards;
+  }
+  .toast.success { border-color: #22c55e; }
+  .toast.error { border-color: #ef4444; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<script>
+(() => {
+  const API_BASE = "/RemoteTeamPro/backend/api";
+  let currentStatus = "Pending";
+  let selectedRequestId = null;
+  let selectedAction = null;
+  const list = document.getElementById("requestsList");
+  const modal = document.getElementById("reviewModal");
+  const commentInput = document.getElementById("reviewComment");
+
+  // Toast
+  const showToast = (msg, type = "info") => {
+    const c = document.getElementById("toastContainer");
+    const t = document.createElement("div");
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  };
+
+  // Escape
+  const esc = (t) => (t ? t.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])) : "");
+
+  // Fetch wrapper
+  const fetchJSON = async (url, opt = {}) => {
+    try {
+      const r = await fetch(url, { credentials: "include", ...opt });
+      return await r.json();
+    } catch (e) {
+      console.error(e);
+      return { success: false };
+    }
+  };
+
+  // Load
+  const loadRequests = async (q = "") => {
+    list.innerHTML = `<div class="text-center py-10 text-gray-400">Loading ${currentStatus}...</div>`;
+    const data = await fetchJSON(`${API_BASE}/admin-project-requests.php?action=list-by-status&status=${encodeURIComponent(currentStatus)}${q ? "&q=" + encodeURIComponent(q) : ""}`);
+    const rows = Array.isArray(data) ? data : data.requests || [];
+    if (!rows.length) {
+      list.innerHTML = `<div class="text-center py-10 text-gray-500">No ${currentStatus} requests.</div>`;
+      return;
+    }
+    list.innerHTML = rows.map(r => `
+      <div class="request-card">
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <h3 class="text-lg font-semibold">${esc(r.project_name)}</h3>
+            <p class="text-gray-400 text-sm mt-1">${esc(r.description || "No description")}</p>
+          </div>
+          <div class="status-chip ${esc(r.status)}">${esc(r.status)}</div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-300 border-t border-gray-700 pt-3">
+          <p><span class="text-gray-400">Client:</span> ${esc(r.client_name || "")}</p>
+          <p><span class="text-gray-400">Email:</span> ${esc(r.client_email || "")}</p>
+          <p><span class="text-gray-400">Budget:</span> ₹${esc(r.budget_allocated ?? "N/A")}</p>
+          <p><span class="text-gray-400">Date:</span> ${esc(r.created_at?.split(" ")[0] || "")}</p>
+        </div>
+        ${r.status === "Pending" ? `
+        <div class="flex justify-end gap-2 mt-4">
+          <button data-id="${r.request_id}" data-action="Approved" class="act-btn px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm text-white">Approve</button>
+          <button data-id="${r.request_id}" data-action="Rejected" class="act-btn px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm text-white">Reject</button>
+        </div>` : ""}
+      </div>
+    `).join("");
+  };
+
+  // Modal handlers
+  document.addEventListener("click", (e) => {
+    if (e.target.matches(".tab-btn")) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active-tab"));
+      e.target.classList.add("active-tab");
+      currentStatus = e.target.dataset.status;
+      loadRequests(document.getElementById("reqSearch").value);
+    }
+    if (e.target.matches(".act-btn")) {
+      selectedRequestId = e.target.dataset.id;
+      selectedAction = e.target.dataset.action;
+      commentInput.value = "";
+      modal.classList.remove("hidden");
+    }
+    if (e.target.id === "cancelReview") modal.classList.add("hidden");
+  });
+
+  // Submit review
+  document.getElementById("submitReview").addEventListener("click", async () => {
+    const comment = commentInput.value.trim();
+    const res = await fetchJSON(`${API_BASE}/admin-project-requests.php?action=update-status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ request_id: selectedRequestId, status: selectedAction, review_comment: comment })
+    });
+    modal.classList.add("hidden");
+    if (res.success) {
+      showToast(`Request ${selectedAction.toLowerCase()} successfully`, "success");
+      await loadRequests();
+    } else showToast("Failed to update", "error");
+  });
+
+  document.getElementById("reqSearch").addEventListener("input", e => loadRequests(e.target.value));
+
+  // Safe reinit on SPA tab switch
+  document.addEventListener("tab:load", loadRequests);
+  document.addEventListener("tab:show", loadRequests);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) loadRequests();
+  });
+
+  loadRequests();
+})();
+</script>

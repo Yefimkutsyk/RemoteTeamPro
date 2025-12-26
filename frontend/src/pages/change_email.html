@@ -1,0 +1,111 @@
+<div class="card max-w-md mx-auto">
+  <h3 class="text-xl font-semibold mb-4">Change Email</h3>
+
+  <form id="emailForm" class="space-y-4">
+    <label class="block text-sm text-gray-400">New Email</label>
+    <input id="newEmail" name="email" type="email" 
+           class="w-full p-2 rounded bg-gray-800 border border-gray-700 text-white"/>
+    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded text-white">
+      Send OTP
+    </button>
+  </form>
+
+  <form id="otpForm" class="space-y-4 hidden mt-6">
+    <input type="hidden" id="otpEmail" name="email" value="">
+    <label class="block text-sm text-gray-400">Enter OTP</label>
+    <input id="otpCode" name="otp" 
+           class="w-full p-2 rounded bg-gray-800 border border-gray-700 text-white"/>
+    <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white">
+      Verify Email
+    </button>
+  </form>
+</div>
+
+<script>
+document.getElementById('emailForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const formData = new FormData(form);
+  const email = formData.get('email');
+
+  try {
+    const response = await fetch('../backend/api/email_verification.php?action=send', {
+      method: 'POST',
+      credentials: 'include', // ensure cookies/session are sent
+      body: formData
+    });
+    let res;
+    try {
+      res = await response.json();
+    } catch (jsonErr) {
+      // If response is not valid JSON, show raw text for debugging
+      const raw = await response.text();
+      alert('Server error (not JSON):\n' + raw);
+      console.error('Raw response:', raw);
+      return;
+    }
+    console.log('OTP send response:', res);
+    if (res.error) {
+      let msg = res.error;
+      if (msg.includes('Not authenticated')) {
+        msg += '\nYou must be logged in to change your email.';
+      }
+      alert('Error: ' + msg);
+      // Optionally, redirect to login page if not authenticated
+      if (msg.includes('Not authenticated')) {
+        window.location.href = 'login.html';
+      }
+      return;
+    }
+    alert(res.message || 'OTP sent');
+    // Put email into hidden field of otp form so verify sends both
+    document.getElementById('otpEmail').value = email;
+    document.getElementById('otpForm').classList.remove('hidden');
+  } catch (err) {
+    alert('Failed to send OTP. Please check your connection or try again later.');
+    console.error('OTP send error:', err);
+  }
+});
+
+document.getElementById('otpForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const formData = new FormData(form);
+
+  try {
+    const response = await fetch('../backend/api/email_verification.php?action=verify', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+    let res;
+    try {
+      res = await response.json();
+    } catch (jsonErr) {
+      const raw = await response.text();
+      alert('Server error (not JSON):\n' + raw);
+      console.error('Raw response:', raw);
+      return;
+    }
+    console.log('OTP verify response:', res);
+    if (res.error) {
+      let msg = res.error;
+      if (msg.includes('Not authenticated')) {
+        msg += '\nYou must be logged in to verify email.';
+      }
+      alert('Error: ' + msg);
+      if (msg.includes('Not authenticated')) {
+        window.location.href = 'login.html';
+      }
+      return;
+    }
+    alert(res.message || 'Verified');
+    if (res.message) {
+      window.location.href = "profile.html";
+    }
+  } catch (err) {
+    alert('Failed to verify OTP. Please check your connection or try again later.');
+    console.error('OTP verify error:', err);
+  }
+});
+</script>

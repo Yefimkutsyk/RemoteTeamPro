@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Employee — Timesheets</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+/* Do NOT overwrite global header/sidebar — keep transparent root */
+:root { --accent: #14b8a6; --card:#0f1724; --muted:#94a3b8; }
+
+/* content wrapper (fits inside dashboard area) */
+.content {
+  padding: 2rem;
+  min-height: calc(100vh - 72px);
+  background: linear-gradient(180deg, rgba(11,17,32,0.25), rgba(11,17,32,0.15));
+}
+
+/* panels */
+.panel {
+  background: rgba(17,24,39,0.9);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 6px 30px rgba(2,6,23,0.6);
+}
+
+/* headings */
+.h1 { color: #60a5fa; font-weight:700; font-size:1.5rem; }
+.section-title { color: var(--accent); font-weight:700; font-size:1.05rem; }
+
+/* controls */
+input, select, textarea {
+  width:100%; padding:0.6rem; border-radius:8px;
+  background: rgba(6,10,18,0.6); color:#e6eef8; border:1px solid rgba(255,255,255,0.04);
+}
+input:focus,select:focus,textarea:focus { box-shadow:0 0 6px rgba(20,184,166,0.12); outline:none; border-color:var(--accent); }
+
+.btn-accent {
+  background: linear-gradient(90deg,#0ea5a3,#14b8a6); color:white; font-weight:700;
+  padding:0.6rem 1rem; border-radius:8px; border:none; cursor:pointer;
+}
+.btn-accent:hover { filter:brightness(1.05); transform:translateY(-1px); }
+
+/* toast + loader */
+#toast { position:fixed; top:1rem; right:1rem; z-index:9999; }
+#loader { display:none; margin:2rem auto; width:36px; height:36px; border:4px solid rgba(255,255,255,0.06); border-top:4px solid var(--accent); border-radius:50%; animation:spin 1s linear infinite; }
+@keyframes spin{to{transform:rotate(360deg);}}
+/* keep header/profile untouched */
+.top-controls { display:flex; gap:1rem; align-items:center; justify-content:flex-end; }
+.top-controls .refresh { background:transparent; border-radius:8px; padding:0.45rem 0.9rem; border:1px solid rgba(255,255,255,0.04); color:#cfeff0; }
+.top-controls .refresh:hover{ background: rgba(20,184,166,0.06); border-color: rgba(20,184,166,0.25); }
+</style>
+</head>
+<body>
+  <div class="content">
+    <div class="flex items-center justify-between mb-6">
+      <div><div class="h1">Timesheets</div></div>
+      <div class="top-controls">
+        <button id="refreshBtn" class="refresh">Refresh</button>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Left: submit -->
+      <div class="panel">
+        <div class="section-title mb-4">Submit Timesheet</div>
+        <div id="loader"></div>
+        <form id="tsForm" class="space-y-4 hidden">
+          <div>
+            <label class="text-sm text-gray-300">Task</label>
+            <select id="taskSelect" required></select>
+          </div>
+          <div>
+            <label class="text-sm text-gray-300">Date</label>
+            <input id="tsDate" type="date" required />
+          </div>
+          <div>
+            <label class="text-sm text-gray-300">Hours</label>
+            <input id="tsHours" type="number" step="0.25" min="0.25" max="24" required />
+          </div>
+          <div>
+            <label class="text-sm text-gray-300">Description</label>
+            <textarea id="tsDesc" rows="3"></textarea>
+          </div>
+          <button class="btn-accent" type="submit">Submit</button>
+        </form>
+      </div>
+
+      <!-- Right: logs -->
+      <div class="panel">
+        <div class="section-title mb-4">Recent Logs</div>
+        <div id="logs" class="text-gray-400">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const API = "http://localhost/RemoteTeamPro/backend/api/timesheets.php";
+  const toast = document.getElementById('toast');
+  const loader = document.getElementById('loader');
+  const form = document.getElementById('tsForm');
+  const taskSelect = document.getElementById('taskSelect');
+  const logs = document.getElementById('logs');
+  const refreshBtn = document.getElementById('refreshBtn');
+
+  const showToast = (msg, type='info') => {
+    const d = document.createElement('div');
+    d.className = `px-3 py-2 rounded ${type==='error'?'bg-red-600 text-white':'bg-cyan-600 text-white'} mb-2`;
+    d.innerText = msg;
+    toast.appendChild(d);
+    setTimeout(()=>d.remove(), 3000);
+  };
+
+  const fetchJSON = async (url, opts={}) => {
+    const res = await fetch(url, { credentials: 'include', ...opts });
+    const json = await res.json().catch(()=> ({}));
+    if (!res.ok) throw new Error(json.message || 'Fetch error');
+    return json;
+  };
+
+  async function loadTasks() {
+    loader.style.display = 'block';
+    form.classList.add('hidden');
+    try {
+      const tasks = await fetchJSON(`${API}?action=get_tasks`);
+      taskSelect.innerHTML = tasks.map(t=>`<option value="${t.task_id}">${t.project_name} — ${t.task_name}</option>`).join('');
+      form.classList.remove('hidden');
+    } catch (err) {
+      showToast('Failed to load tasks: ' + err.message, 'error');
+    } finally {
+      loader.style.display = 'none';
+    }
+  }
+
+  async function loadLogs() {
+    try {
+      const rows = await fetchJSON(`${API}?action=get_timesheets`);
+      // as an employee, backend returns only your rows
+      if (!rows.length) {
+        logs.innerHTML = '<p class="text-gray-400">No entries yet.</p>';
+        return;
+      }
+      logs.innerHTML = rows.map(r=>`
+        <div class="py-2 border-b border-gray-800 flex justify-between">
+          <div>
+            <div class="text-sm">${r.date}</div>
+            <div class="text-xs text-gray-400">${r.project_name} — ${r.task_name}</div>
+          </div>
+          <div class="text-cyan-400 font-semibold">${r.hours_logged} hrs</div>
+        </div>
+      `).join('');
+    } catch (err) {
+      logs.innerHTML = '<div class="text-red-500">Error loading logs</div>';
+    }
+  }
+
+  async function submitTimesheet(e) {
+    e.preventDefault();
+    const body = {
+      task_id: taskSelect.value,
+      date: document.getElementById('tsDate').value,
+      hours_logged: document.getElementById('tsHours').value,
+      description: document.getElementById('tsDesc').value
+    };
+    try {
+      const res = await fetchJSON(`${API}?action=submit_timesheet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      showToast(res.message || 'Submitted');
+      form.reset();
+      await loadLogs();
+    } catch (err) {
+      showToast(err.message || 'Submit failed', 'error');
+    }
+  }
+
+  refreshBtn.addEventListener('click', async ()=>{ await loadTasks(); await loadLogs(); });
+
+  document.getElementById('tsForm').addEventListener('submit', submitTimesheet);
+
+  // IIFE dynamic loader
+  (async ()=>{
+    await loadTasks();
+    await loadLogs();
+  })();
+})();
+</script>
+</body>
+</html>

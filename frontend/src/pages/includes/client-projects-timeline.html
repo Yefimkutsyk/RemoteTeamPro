@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Projects Timeline</title>
+
+  <!-- Tailwind CDN (keeps the dark glassmorphism) -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* small extra styles to make the cards match previously requested theme */
+    .glass {
+      background: linear-gradient(180deg, rgba(30, 22, 59, 0.45), rgba(10, 8, 20, 0.35));
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(148, 163, 184, 0.06);
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans">
+
+  <div id="client-projects-timeline-root" class="p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl md:text-3xl font-bold text-violet-400">My Project Timeline</h1>
+      <div>
+        <button id="cpt-refresh-btn" class="px-3 py-1 rounded-lg text-sm font-medium glass hover:opacity-90">Refresh</button>
+      </div>
+    </div>
+
+    <div id="cpt-message" class="text-gray-400 mb-6"></div>
+
+    <div id="cpt-timeline-container" class="space-y-6"></div>
+  </div>
+
+  <script>
+  (async () => {
+    // ALL variables, functions, event listeners and API calls must remain INSIDE this IIFE.
+    // No top-level const/let are declared outside this scope.
+
+    const API_BASE = '/RemoteTeamPro/backend/api';
+    const ENDPOINT = `${API_BASE}/client-projects-timeline.php`; // backend endpoint (server must provide JSON)
+    const root = document.getElementById('client-projects-timeline-root');
+    const container = root.querySelector('#cpt-timeline-container');
+    const messageEl = root.querySelector('#cpt-message');
+    const refreshBtn = root.querySelector('#cpt-refresh-btn');
+
+    // Store local charts so we could do local cleanup if needed (this IIFE's lifetime only)
+    let charts = [];
+
+    // Safe fetch JSON
+    const fetchJSON = async (url, opts = {}) => {
+      try {
+        const res = await fetch(url, opts);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (err) {
+        console.error('fetchJSON error', err);
+        return { error: err.message || 'Network error' };
+      }
+    };
+
+    // Utility: format date safely
+    const fmtDate = (d) => {
+      if (!d) return 'N/A';
+      try {
+        const dt = new Date(d);
+        if (isNaN(dt)) return d;
+        return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      } catch {
+        return d;
+      }
+    };
+
+    // Clean container and destroy local charts (prevent memory leak in single injection)
+    const cleanup = () => {
+      charts.forEach(c => {
+        try { c.destroy(); } catch (e) { /* ignore */ }
+      });
+      charts = [];
+      while (container.firstChild) container.removeChild(container.firstChild);
+    };
+
+    // Render a single project card
+    const renderProjectCard = (project, idx) => {
+      // unique canvas id per render to avoid collisions if multiple injections exist
+      const uniqueId = `cpt-chart-${Date.now().toString(36)}-${Math.floor(Math.random()*10000)}-${idx}`;
+
+      const progressColor =
+        project.status === 'Completed' ? 'bg-green-500' :
+        project.status === 'Active' ? 'bg-blue-500' :
+        project.status === 'Pending' ? 'bg-yellow-500' :
+        'bg-gray-600';
+
+      const card = document.createElement('div');
+      card.className = 'glass rounded-2xl p-5 shadow-lg border border-gray-800';
+
+      // Build inner HTML (safe text nodes where necessary)
+      card.innerHTML = `
+        <div class="flex justify-between items-start gap-4">
+          <div class="min-w-0">
+            <h2 class="text-xl md:text-2xl font-semibold text-violet-300 truncate" title="${escapeHtml(project.project_name || 'Untitled')}">
+              ${escapeHtml(project.project_name || 'Untitled')}
+            </h2>
+            <p class="text-sm text-gray-400 mt-1 line-clamp-2">${escapeHtml(project.description || '')}</p>
+            <div class="mt-3 text-xs text-gray-400 grid grid-cols-2 gap-2">
+              <div><strong>Start:</strong> ${fmtDate(project.start_date)}</div>
+              <div><strong>Deadline:</strong> ${fmtDate(project.deadline)}</div>
+              <div><strong>End:</strong> ${project.end_date ? fmtDate(project.end_date) : 'In Progress'}</div>
+              <div><strong>Budget:</strong> ${project.budget_allocated ? '₹' + Number(project.budget_allocated).toLocaleString() : 'N/A'}</div>
+            </div>
+          </div>
+
+          <div class="text-right flex-shrink-0">
+            <div class="inline-block px-3 py-1 rounded-full text-xs font-medium ${progressColor} text-white">${escapeHtml(project.status || 'Unknown')}</div>
+            <p class="text-gray-400 text-sm mt-2">Manager: ${escapeHtml(project.manager_name || 'N/A')}</p>
+            <div class="mt-2 text-gray-400 text-xs">Completion: ${Number(project.completion_percentage || 0).toFixed(2)}%</div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div class="h-full ${progressColor}" style="width:${Number(project.completion_percentage||0)}%;"></div>
+          </div>
+          <div class="mt-3 flex items-start gap-4">
+            <div class="w-2/3">
+              <h3 class="text-sm font-medium text-violet-400 mb-2">Tasks</h3>
+              <div class="bg-gray-950/30 border border-gray-800 rounded-xl p-3 max-h-44 overflow-auto text-sm">
+                ${renderTaskListHtml(project.tasks || [])}
+              </div>
+            </div>
+            <div class="w-1/3">
+              <canvas id="${uniqueId}" height="120"></canvas>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(card);
+
+      // Build chart data & render (chart instance kept in local charts array)
+      const completed = (project.tasks || []).filter(t => t.status === 'Completed').length;
+      const inProgress = (project.tasks || []).filter(t => t.status === 'In Progress').length;
+      const todo = (project.tasks || []).filter(t => t.status === 'To Do').length;
+
+      try {
+        const ctx = card.querySelector(`#${uniqueId}`).getContext('2d');
+        const chart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Completed', 'In Progress', 'To Do'],
+            datasets: [{
+              data: [completed, inProgress, todo],
+              // do not hardcode colors? Chart.js requires colors; keeping neutral theme-friendly hues
+              backgroundColor: ['#22c55e', '#3b82f6', '#eab308'],
+            }]
+          },
+          options: {
+            plugins: {
+              legend: {
+                labels: { color: '#cbd5e1', boxWidth: 12, padding: 10 }
+              },
+              tooltip: { enabled: true }
+            },
+            maintainAspectRatio: false,
+            responsive: true
+          }
+        });
+        charts.push(chart);
+      } catch (err) {
+        console.warn('Chart render failed', err);
+      }
+    };
+
+    // Create safe task list HTML
+    const renderTaskListHtml = (tasks) => {
+      if (!tasks || !tasks.length) {
+        return `<div class="text-gray-500">No tasks yet.</div>`;
+      }
+      // build rows safely
+      return tasks.map(t => {
+        const statusColor =
+          t.status === 'Completed' ? 'text-green-400' :
+          t.status === 'In Progress' ? 'text-blue-400' :
+          t.status === 'Blocked' ? 'text-red-400' :
+          'text-gray-400';
+
+        return `
+          <div class="flex justify-between items-center py-1 border-b border-gray-800 last:border-b-0">
+            <div class="truncate pr-4" title="${escapeHtml(t.task_name || '')}">${escapeHtml(t.task_name || '(no name)')}</div>
+            <div class="${statusColor} text-xs">${escapeHtml(t.status || '')}</div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    // Minimal HTML escape utility
+    function escapeHtml(unsafe) {
+      if (unsafe === null || unsafe === undefined) return '';
+      return String(unsafe)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    // Top-level render function
+    const render = (projects) => {
+      cleanup();
+      if (!Array.isArray(projects)) {
+        messageEl.textContent = 'Unexpected data format from server.';
+        return;
+      }
+      if (!projects.length) {
+        messageEl.textContent = 'You have no projects yet.';
+        return;
+      }
+      messageEl.textContent = '';
+      projects.forEach((p, i) => renderProjectCard(p, i));
+    };
+
+    // Load data (init)
+    const loadAndRender = async () => {
+      messageEl.textContent = 'Loading projects...';
+      const data = await fetchJSON(ENDPOINT, { credentials: 'same-origin' });
+      if (data && data.error) {
+        messageEl.textContent = `Error: ${data.error}`;
+        return;
+      }
+      // If server returns an object with an 'error' key inside, handle it
+      if (!Array.isArray(data)) {
+        // sometimes backend may wrap result: { projects: [...] }
+        if (data && Array.isArray(data.projects)) {
+          render(data.projects);
+        } else {
+          messageEl.textContent = 'No projects available or invalid response.';
+        }
+        return;
+      }
+      render(data);
+    };
+
+    // Event listeners inside IIFE only
+    refreshBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await loadAndRender();
+    });
+
+    // If the tab is injected repeatedly, ensure it runs automatically (IIFE runs on injection)
+    await (async function init() {
+      // small guard: if container isn't found (in case HTML structure changed), abort gracefully
+      if (!container) {
+        console.warn('Client Projects Timeline: missing container element');
+        return;
+      }
+      await loadAndRender();
+    })();
+
+    // When the DOM node is removed by parent (tab switch), it's OK — Chart instances are destroyed on cleanup next injection.
+    // Optional: observe removal to destroy charts when root removed — prevents memory leaks in long-running SPA.
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const removed of m.removedNodes) {
+          if (removed === root) {
+            // root was removed from DOM -> cleanup charts
+            cleanup();
+            observer.disconnect();
+            return;
+          }
+        }
+      }
+    });
+    // Observe the parent node for childList changes
+    if (root.parentNode) {
+      observer.observe(root.parentNode, { childList: true });
+    }
+
+  })();
+  </script>
+  <script src="/RemoteTeamPro/frontend/src/assets/js/logActivity.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  logActivity('VIEW_PROJECTS', 'Viewed projects tab');
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard - Projects</title>
+    <!-- Tailwind CSS is used for structure and base styles -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    
+    <style>
+        /* Glassmorphism Configuration */
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.05); /* Very light transparency */
+            backdrop-filter: blur(10px); /* The key Glassmorphism effect */
+            border: 1px solid rgba(255, 255, 255, 0.15); /* Subtle white border */
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* Corporate depth shadow */
+        }
+        
+        /* Base Background and Typography */
+        body { 
+            background-color: #0d0d1b;
+            color: #e0e7ff; /* Lighter text for dark mode */
+            background-image: url('https://source.unsplash.com/random/1920x1080/?abstract,corporate,blue'); /* Placeholder background */
+            background-size: cover;
+            background-attachment: fixed;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* FIX: New class for internal padding */
+        .page-padding {
+            padding: 2rem;
+        }
+
+        /* Modal Backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Utility Styles */
+        .status-badge { padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .table-scroll-wrapper { overflow-x: auto; max-width: 100%; }
+        
+        /* Input/Select Styles (Glassmorphism integration) */
+        .glass-input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e0e7ff;
+            transition: all 0.2s;
+        }
+        .glass-input:focus {
+             background-color: rgba(255, 255, 255, 0.15);
+             border-color: #3CB4C8;
+             outline: none;
+        }
+        /* FIX: Ensure dropdown text is readable against the background */
+        .glass-input select, .glass-input option, select.glass-input option {
+             /* Set text color explicitly for options to be visible */
+             color: #1f2937 !important; 
+        }
+        /* Style for the select element itself */
+        select.glass-input {
+            color: #e0e7ff; /* Text color for the selected value */
+        }
+
+
+        /* Project Status Colors for Badges (match Chart.js colors) */
+        .status-Active { background-color: #3B82F6; } /* Blue-500 */
+        .status-Pending { background-color: #FBBF24; } /* Amber-400 */
+        .status-OnHold { background-color: #EF4444; } /* Red-500 */
+        .status-Completed { background-color: #10B981; } /* Emerald-500 */
+        .status-Cancelled { background-color: #6B7280; } /* Gray-500 */
+        
+        /* Progress Bar Styles */
+        .progress-bar-container { background-color: rgba(255, 255, 255, 0.1); border-radius: 999px; height: 8px; width: 100px; }
+        .progress-bar { height: 8px; border-radius: 999px; background-color: #3CB4C8; transition: width 0.5s ease-in-out; }
+        
+        /* New style for matching skills */
+        .skill-tag-match { background-color: #10B981 !important; }
+        
+        /* Select2/Searchable Select styling */
+        .select-role {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%239ca3af'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.5em 1.5em;
+        }
+    </style>
+</head>
+<body>
+    <!-- WRAPPING ENTIRE CONTENT IN A DIV WITH PAGE-PADDING -->
+    <div class="page-padding">
+        <header class="mb-8 border-b border-gray-700/50 pb-4">
+            <h1 class="text-4xl font-extrabold text-white mb-1">Project Management Dashboard</h1>
+            <p class="text-gray-300 text-base">Manage your assigned portfolio and team resources efficiently.</p>
+        </header>
+
+        <main id="projectContent" class="space-y-8">
+            <div id="loadingState" class="text-center py-10 glass-card">
+                <i class="fa-solid fa-spinner fa-spin text-cyan-400 text-3xl mb-3"></i>
+                <p class="text-gray-300">Loading essential project data...</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS CONTAINER -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[100] space-y-3 pointer-events-none">
+        <!-- Toasts will be appended here -->
+    </div>
+    
+    <!-- Confirmation Modal (for delete/irreversible actions) -->
+    <div id="confirmModal" class="fixed inset-0 modal-backdrop hidden z-50 justify-center items-center">
+        <div class="glass-card p-6 rounded-xl w-full max-w-sm transition-transform duration-300 transform scale-95 hover:scale-100 text-center">
+            <i id="confirmIcon" class="fa-solid fa-triangle-exclamation text-yellow-500 text-3xl mb-4"></i>
+            <h4 class="text-xl font-bold text-white mb-3" id="confirmTitle">Confirm Action</h4>
+            <p class="text-gray-300 mb-6" id="confirmMessage">Are you sure you want to proceed with this action?</p>
+            <div class="flex justify-center space-x-3 pt-4 border-t border-gray-700/50">
+                <button type="button" id="confirmCancelBtn" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition">Cancel</button>
+                <button type="button" id="confirmProceedBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">Proceed</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project CREATE/UPDATE Modal (Generic) -->
+    <div id="projectModal" class="fixed inset-0 modal-backdrop hidden z-50 justify-center items-center">
+        <div class="glass-card p-8 rounded-xl w-full max-w-lg transition-transform duration-300 transform scale-95 hover:scale-100">
+            <h3 class="text-2xl font-bold text-white mb-6" id="projectModalTitle">Create New Project</h3>
+            <form id="projectForm" class="space-y-4">
+                <input type="hidden" name="project_id" id="project_id_field">
+                <input type="text" name="name" placeholder="Project Name" required class="w-full p-3 glass-input rounded-lg">
+                <textarea name="description" placeholder="Project Description (required skills, goals, etc.)" rows="4" required class="w-full p-3 glass-input rounded-lg"></textarea>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="number" name="budget" placeholder="Budget (₹)" required class="w-full p-3 glass-input rounded-lg">
+                    <input type="date" name="deadline" placeholder="Deadline" required class="w-full p-3 glass-input rounded-lg">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <select name="client_id" id="clientSelect" class="w-full p-3 glass-input rounded-lg">
+                        <option value="">Client (Optional)</option>
+                    </select>
+                    <input type="text" id="managerNameDisplay" placeholder="Assigned Manager" class="w-full p-3 glass-input rounded-lg" readonly>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                     <!-- STATUS SELECT - Enabled/Disabled via JS in openProjectModal -->
+                     <select name="status" id="statusSelect" class="w-full p-3 glass-input rounded-lg">
+                        <option value="Planning">Planning</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Active">Active</option>
+                        <option value="On Hold">On Hold</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                    <div id="completionSection" class="hidden">
+                        <input type="number" name="completion" id="completionInput" min="0" max="100" placeholder="Completion %" class="w-full p-3 glass-input rounded-lg">
+                    </div>
+                </div>
+
+                <div id="projectModalMessage" class="text-sm text-center text-red-400 hidden"></div>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-700/50">
+                    <button type="button" onclick="window.closeProjectModal()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition">Cancel</button>
+                    <button type="submit" id="submitProjectBtn" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Team Assignment Modal -->
+    <div id="teamAssignmentModal" class="fixed inset-0 modal-backdrop hidden z-50 justify-center items-center">
+        <div class="glass-card p-8 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto transition-transform duration-300 transform scale-95 hover:scale-100">
+            <h3 class="text-2xl font-bold text-white mb-4" id="teamModalTitle">Assign Team</h3>
+            <p class="text-gray-300 mb-6">Select employees for the project and define their roles. <span class="text-emerald-400">Green skills</span> indicate a match with project requirements.</p>
+            
+            <div id="employeeSelectionContainer">
+                <div class="flex items-center space-x-3 mb-4">
+                    <input type="text" id="skillFilter" placeholder="Filter by Skill/Employee Name" class="flex-grow p-3 glass-input rounded-lg">
+                </div>
+                
+                <!-- Employee List & Role Assignment Header -->
+                <div class="flex items-center space-x-4 p-3 border-b border-gray-700/50 text-gray-400 font-semibold text-sm sticky top-0 bg-black/30 backdrop-filter backdrop-blur-sm z-10">
+                    <div class="w-5">#</div>
+                    <div class="flex-grow">Employee/Skills</div>
+                    <div class="w-1/4">Project Role</div>
+                </div>
+
+                <div id="employeeList" class="space-y-1">
+                    <div class="text-center py-6 text-gray-400">Loading employees...</div>
+                </div>
+            </div>
+
+            <div id="teamModalMessage" class="text-sm text-center text-red-400 mt-4 hidden"></div>
+            <div class="flex justify-end space-x-3 pt-6 border-t border-gray-700/50 mt-6">
+                <button type="button" onclick="window.closeTeamAssignmentModal()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition">Cancel</button>
+                <button type="button" id="saveTeamBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
+                    <i class="fa-solid fa-floppy-disk mr-2"></i> Save Team Assignment
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    (function() {
+        // --- Configuration & Global State ---
+        // NOTE: The API_URL is for demonstration purposes; ensure it matches your environment.
+        const API_URL = "http://localhost/RemoteTeamPro/backend/api/manager-projects.php"; 
+        const mainContent = document.getElementById('projectContent');
+        const projectModal = document.getElementById('projectModal');
+        const teamAssignmentModal = document.getElementById('teamAssignmentModal');
+        const confirmModal = document.getElementById('confirmModal');
+        const projectForm = document.getElementById('projectForm');
+        const submitProjectBtn = document.getElementById('submitProjectBtn');
+        const projectModalTitle = document.getElementById('projectModalTitle');
+        const projectModalMessage = document.getElementById('projectModalMessage');
+        const teamModalMessage = document.getElementById('teamModalMessage');
+        const saveTeamBtn = document.getElementById('saveTeamBtn');
+        const employeeListEl = document.getElementById('employeeList');
+        const skillFilterEl = document.getElementById('skillFilter');
+        const completionSection = document.getElementById('completionSection');
+        const statusSelect = document.getElementById('statusSelect');
+        const clientSelect = document.getElementById('clientSelect');
+        const managerNameDisplay = document.getElementById('managerNameDisplay'); 
+        const toastContainer = document.getElementById('toastContainer');
+        
+        let currentProjectId = null;
+        let allEmployees = [];
+        let projectRequiredSkills = []; 
+        let statusChart = null; 
+        
+        // This is a placeholder for the manager's user ID, which should be retrieved from PHP session.
+        // For frontend logic, we will assume this is available after a successful auth/load, 
+        // but for now, we'll use a placeholder that matches the data structure used in PHP.
+        let currentManagerId = 1; 
+
+        // New: Predefined roles for the dropdown
+        const PREDEFINED_ROLES = [
+            'Project Manager', 'Technical Lead', 'Software Architect', 
+            'Backend Developer (Senior)', 'Backend Developer (Junior)',
+            'Frontend Developer (Senior)', 'Frontend Developer (Junior)', 
+            'Full Stack Developer', 'UI/UX Designer', 'QA Tester', 
+            'Data Analyst', 'DevOps Engineer', 'Database Administrator',
+            'Business Analyst', 'Technical Writer', 'Support Engineer'
+        ].sort(); // Sort alphabetically for better searchability
+
+        // --- Core Utility: API Fetcher ---
+        async function api(action, opts = {}) { 
+            const method = opts.method || 'GET';
+            let url = `${API_URL}?action=${action}`;
+            
+            if (method === 'GET' && opts.query) {
+                url += `&${new URLSearchParams(opts.query).toString()}`;
+            }
+
+            try {
+                const res = await fetch(url, { 
+                    method, 
+                    headers: (method !== 'GET' && method !== 'PUT' && method !== 'DELETE' ? {"Content-Type":"application/json"} : {}),
+                    body: (method !== 'GET' && method !== 'DELETE' ? JSON.stringify(opts.body || {}) : undefined),
+                    credentials: 'include' 
+                });
+
+                const data = await (res.headers.get("content-type")?.includes("application/json") ? res.json() : { success: false, error: res.statusText || 'Non-JSON response received.' });
+                
+                if (!res.ok || !data.success) {
+                    throw new Error(data.error || `Server responded with status ${res.status}: ${res.statusText}`);
+                }
+                
+                return data;
+
+            } catch (e) {
+                console.error(`API Error for action ${action}:`, e);
+                throw e; 
+            }
+        }
+        
+        // --- Custom Messaging / Notifications ---
+
+        /** Shows a temporary toast message. */
+        function showToast(message, type = 'success') {
+            const icon = {
+                'success': 'fa-circle-check text-emerald-400',
+                'error': 'fa-circle-xmark text-red-400',
+                'info': 'fa-circle-info text-cyan-400'
+            }[type] || 'fa-circle-info text-gray-400';
+            
+            const toast = document.createElement('div');
+            toast.className = 'glass-card p-4 rounded-lg flex items-center space-x-3 transition-opacity duration-300 pointer-events-auto';
+            toast.style.minWidth = '250px';
+            toast.style.opacity = '0';
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} text-lg"></i>
+                <p class="text-white text-sm">${message}</p>
+            `;
+
+            toastContainer.appendChild(toast);
+            
+            // Fade in
+            setTimeout(() => { toast.style.opacity = '1'; }, 10);
+
+            // Fade out and remove
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        /** Shows a confirmation modal and returns a Promise resolving to true/false. */
+        function showConfirm(title, message, proceedText = 'Confirm') {
+            return new Promise(resolve => {
+                document.getElementById('confirmTitle').textContent = title;
+                document.getElementById('confirmMessage').textContent = message;
+                document.getElementById('confirmProceedBtn').textContent = proceedText;
+                document.getElementById('confirmProceedBtn').classList.remove('bg-red-600', 'hover:bg-red-700', 'bg-indigo-600', 'hover:bg-indigo-700');
+                document.getElementById('confirmProceedBtn').classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                document.getElementById('confirmIcon').className = 'fa-solid fa-triangle-exclamation text-yellow-500 text-3xl mb-4';
+
+                // Specific styling for delete actions
+                if (proceedText.toLowerCase().includes('delete')) {
+                    document.getElementById('confirmProceedBtn').classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                    document.getElementById('confirmProceedBtn').classList.add('bg-red-600', 'hover:bg-red-700');
+                    document.getElementById('confirmIcon').className = 'fa-solid fa-trash-can text-red-500 text-3xl mb-4';
+                }
+
+                confirmModal.classList.remove('hidden');
+                confirmModal.classList.add('flex');
+
+                const handleProceed = () => {
+                    cleanup();
+                    resolve(true);
+                };
+                
+                const handleCancel = () => {
+                    cleanup();
+                    resolve(false);
+                };
+
+                const cleanup = () => {
+                    document.getElementById('confirmProceedBtn').removeEventListener('click', handleProceed);
+                    document.getElementById('confirmCancelBtn').removeEventListener('click', handleCancel);
+                    confirmModal.classList.add('hidden');
+                    confirmModal.classList.remove('flex');
+                };
+
+                document.getElementById('confirmProceedBtn').addEventListener('click', handleProceed);
+                document.getElementById('confirmCancelBtn').addEventListener('click', handleCancel);
+            });
+        }
+
+
+        function getStatusClass(status) {
+             const lowerStatus = status.toLowerCase().replace(/\s/g, '').replace('planning', 'pending'); // Use pending style for planning for now
+             return `status-${lowerStatus}`;
+        }
+        
+        // --- Chart.js Visualization (omitted for brevity, assume unchanged) ---
+
+        const CHART_COLORS = {
+            Active: '#3B82F6',   // Blue-500
+            Pending: '#FBBF24',  // Amber-400
+            'On Hold': '#EF4444', // Red-500
+            Completed: '#10B981', // Emerald-500
+            Cancelled: '#6B7280', // Gray-500
+            Planning: '#FBBF24' // Use Amber-400 for Planning
+        };
+
+        function renderCharts(statusCounts) {
+            const labels = Object.keys(statusCounts);
+            const data = Object.values(statusCounts);
+            const colors = labels.map(label => CHART_COLORS[label] || '#4B5563'); // Default Gray
+
+            const ctx = document.getElementById('statusChart');
+
+            if (statusChart) {
+                statusChart.data.labels = labels;
+                statusChart.data.datasets[0].data = data;
+                statusChart.data.datasets[0].backgroundColor = colors;
+                statusChart.update();
+                return;
+            }
+
+            statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        hoverOffset: 8,
+                        borderWidth: 1,
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#E0E7FF',
+                                boxWidth: 10,
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                    return `${label}: ${value} (${percentage})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderProjectCards(stats) {
+             return `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <!-- Project Stats -->
+                    <div class="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="glass-card p-6 border-b-4 border-cyan-400">
+                            <p class="text-sm font-medium text-gray-300">Total Projects</p>
+                            <p class="text-3xl font-bold text-white mt-1">${stats.totalProjects || 0}</p>
+                        </div>
+                        <div class="glass-card p-6 border-b-4 border-indigo-400">
+                            <p class="text-sm font-medium text-gray-300">Total Budget (₹)</p>
+                            <p class="text-3xl font-bold text-white mt-1">₹${(stats.totalBudget || 0).toLocaleString('en-IN')}</p>
+                        </div>
+                        <div class="glass-card p-6 border-b-4 border-emerald-400">
+                            <p class="text-sm font-medium text-gray-300">Employees Available</p>
+                            <p class="text-3xl font-bold text-white mt-1">${stats.employeesAvailable || 0}</p>
+                        </div>
+                         <div class="glass-card p-6 border-b-4 border-pink-400">
+                            <p class="text-sm font-medium text-gray-300">Employees Assigned</p>
+                            <p class="text-3xl font-bold text-white mt-1">${stats.employeesAssigned || 0}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart Visualization -->
+                    <div class="glass-card p-6 lg:col-span-2 flex flex-col items-center">
+                        <h2 class="text-xl font-semibold text-white mb-4">Project Status Distribution</h2>
+                        <div class="relative w-full h-64">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        function renderProjectTable(projects) {
+            let tableHtml = `
+                <div class="glass-card p-6">
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-700/50 pb-4">
+                        <h2 class="text-2xl font-semibold text-white">Assigned Projects Overview</h2>
+                        <button onclick="window.openProjectModal('create')" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition shadow-md hover:shadow-lg">
+                            <i class="fa-solid fa-plus mr-2"></i> Create New Project
+                        </button>
+                    </div>
+                    <div class="table-scroll-wrapper">
+                        <table class="min-w-full divide-y divide-gray-700/50">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">PROJECT NAME</th>
+                                    <th class="py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">MANAGER</th>
+                                    <th class="py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">CLIENT</th>
+                                    <th class="py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">STATUS</th>
+                                    <th class="py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">DEADLINE</th>
+                                    <th class="py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">COMPLETION</th>
+                                    <th class="py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">TEAM SIZE</th>
+                                    <th class="py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-700/50">
+            `;
+
+            if (projects.length === 0) {
+                 tableHtml += `
+                     <tr><td colspan="8" class="py-8 text-center text-gray-400 text-lg">No projects currently assigned.</td></tr>
+                   `;
+            } else {
+                projects.forEach(project => {
+                    const completion = parseFloat(project.completion) || 0;
+                    const projectData = {
+                        project_id: project.project_id, name: project.name, description: project.description,
+                        budget: project.budget, deadline: project.deadline, status: project.status,
+                        completion: project.completion, client_id: project.client_id, 
+                        manager_name: project.manager_name, client_name: project.client_name,
+                        manager_id: project.manager_id // Pass manager_id for deletion check
+                    };
+                    const escapedDesc = project.description?.replace(/'/g, "\\'")?.replace(/"/g, '\\"') || '';
+                    
+                    // Determine if the delete button should be visible/active
+                    // The actual security check happens in PHP, but this provides a visual cue.
+                    const canDelete = project.manager_id && project.manager_id == currentManagerId; 
+                    const deleteButtonHtml = canDelete ? `
+                        <button onclick="window.triggerDeleteProject(${project.project_id}, '${project.name.replace(/'/g, "\\'")}')" class="px-3 py-1 bg-red-600/80 hover:bg-red-700 text-white rounded-md transition text-xs shadow-sm">
+                            <i class="fas fa-trash mr-1"></i> Del
+                        </button>` : '';
+
+
+                    tableHtml += `
+                        <tr class="hover:bg-white/5 transition duration-150" data-project='${JSON.stringify(projectData)}'>
+                            <td class="py-4 whitespace-nowrap text-sm font-medium text-white">${project.name}</td>
+                            <td class="py-4 whitespace-nowrap text-sm text-gray-300">${project.manager_name || 'N/A'}</td>
+                            <td class="py-4 whitespace-nowrap text-sm text-gray-300">${project.client_name || 'N/A'}</td>
+                            <td class="py-4 whitespace-nowrap text-sm">
+                                <span class="status-badge ${getStatusClass(project.status)}">${project.status}</span>
+                            </td>
+                            <td class="py-4 whitespace-nowrap text-sm text-gray-300">${project.deadline}</td>
+                            <td class="py-4 whitespace-nowrap text-sm">
+                                <div class="flex items-center space-x-2">
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" style="width: ${completion}%;"></div>
+                                    </div>
+                                    <span class="text-gray-300">${completion.toFixed(0)}%</span>
+                                </div>
+                            </td>
+                            <td class="py-4 whitespace-nowrap text-sm text-gray-300">${project.team_size || 0}</td>
+                            <td class="py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <button onclick="window.openTeamAssignmentModal(${project.project_id}, '${project.name.replace(/'/g, "\\'")}', '${escapedDesc}')" class="px-3 py-1 bg-indigo-600/80 hover:bg-indigo-700 text-white rounded-md transition text-xs shadow-sm">
+                                    <i class="fas fa-users mr-1"></i> Team
+                                </button>
+                                <button onclick="window.openProjectModal('edit', this)" class="px-3 py-1 bg-yellow-600/80 hover:bg-yellow-700 text-white rounded-md transition text-xs shadow-sm">
+                                    <i class="fas fa-pencil mr-1"></i> Edit
+                                </button>
+                                ${deleteButtonHtml}
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            tableHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            return tableHtml;
+        }
+
+        // --- Team Assignment Modal Logic ---
+
+        function parseRequiredSkills(description) {
+            const keywords = ['developer', 'designer', 'engineer', 'frontend', 'backend', 'tester', 'analyst', 'manager', 'lead', 'architect', 'sql', 'php', 'javascript', 'tailwind', 'css', 'api', 'mobile', 'devops'];
+            const lowerDescription = (description || '').toLowerCase();
+            return keywords.filter(k => lowerDescription.includes(k));
+        }
+        
+        // NEW: Render employee list using a searchable SELECT element
+        function renderEmployeeList(employees, currentTeam = {}) {
+            // Helper to generate <option> tags for the predefined roles
+            const roleOptionsHtml = (assignedRole = '') => {
+                let options = PREDEFINED_ROLES.map(role => 
+                    // FIX: Ensure option text is readable by forcing dark text
+                    `<option value="${role}" ${role === assignedRole ? 'selected' : ''} style="color: #1f2937;">${role}</option>` 
+                ).join('');
+                // FIX: Ensure placeholder text is readable
+                return `<option value="" ${assignedRole === '' ? 'selected' : ''} disabled style="color: #6b7280;">Select Role...</option>` + options;
+            };
+
+            let html = employees.map(employee => {
+                const isAssigned = !!currentTeam[employee.user_id];
+                const assignedRole = isAssigned ? currentTeam[employee.user_id].role : '';
+                
+                const skillsHtml = employee.skills.map(skill => {
+                    const skillName = skill.toLowerCase();
+                    const isMatch = projectRequiredSkills.some(reqSkill => skillName.includes(reqSkill));
+                    const matchClass = isMatch ? 'skill-tag-match' : ''; 
+                    return `<span class="inline-block px-2 py-0.5 text-xs rounded-full mr-1 mb-1 bg-gray-600 text-white ${matchClass}">${skill}</span>`;
+                }).join('');
+
+                const isChecked = isAssigned ? 'checked' : '';
+                // Role select is enabled/disabled based on the checkbox state
+                const isDisabled = isAssigned ? '' : 'disabled'; 
+                const employeeTitle = employee.role === 'Manager' ? `Manager (${employee.role})` : employee.role;
+
+                return `
+                    <div class="flex items-center space-x-4 p-3 border-b border-gray-700/50 hover:bg-white/10 transition duration-150">
+                        <input type="checkbox" data-user-id="${employee.user_id}" ${isChecked} class="employee-checkbox w-5 h-5 text-indigo-400 bg-white/10 border-gray-500 rounded focus:ring-indigo-400">
+                        
+                        <div class="flex-grow">
+                            <p class="text-white font-semibold">${employee.name}</p>
+                            <p class="text-gray-400 text-sm">${employeeTitle}</p>
+                            <div class="mt-1 flex flex-wrap">${skillsHtml || '<span class="text-gray-500 text-xs italic">No skills listed</span>'}</div>
+                        </div>
+                        
+                        <div class="w-1/4 relative">
+                            <!-- Dropdown for role assignment (now a SELECT) -->
+                            <select data-user-id="${employee.user_id}" 
+                                class="employee-role w-full p-2 glass-input rounded-lg text-sm select-role" ${isDisabled}>
+                                ${roleOptionsHtml(assignedRole)}
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            employeeListEl.innerHTML = html;
+            
+            // Add listeners for checkbox changes to enable/disable the role select
+            document.querySelectorAll('.employee-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    const userId = e.target.dataset.userId;
+                    const roleSelect = document.querySelector(`.employee-role[data-user-id="${userId}"]`);
+                    roleSelect.disabled = !e.target.checked;
+                    // If unchecked, reset to default 'Select Role...'
+                    if (!e.target.checked) roleSelect.value = '';
+                });
+            });
+        }
+        
+        window.openTeamAssignmentModal = async function(projectId, projectName, projectDescription) {
+            currentProjectId = projectId;
+            projectRequiredSkills = parseRequiredSkills(projectDescription);
+            
+            document.getElementById('teamModalTitle').textContent = `Assign Team to Project: ${projectName}`;
+            employeeListEl.innerHTML = '<div class="text-center py-6 text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Fetching team data...</div>';
+            teamAssignmentModal.classList.remove('hidden');
+            teamAssignmentModal.classList.add('flex'); // Show modal
+            teamModalMessage.classList.add('hidden'); 
+
+            try {
+                // Fetch ALL employees and current team simultaneously
+                const [employeesResult, currentTeamResult] = await Promise.all([
+                    api('list-all-employees'), 
+                    api('get-project-team', { query: { project_id: projectId } })
+                ]);
+                
+                allEmployees = employeesResult.employees;
+
+                const currentTeamMap = currentTeamResult.team.reduce((acc, member) => {
+                    acc[member.user_id] = { role: member.role };
+                    return acc;
+                }, {});
+
+                renderEmployeeList(allEmployees, currentTeamMap);
+                
+                skillFilterEl.oninput = () => filterEmployeeList(currentTeamMap);
+                
+            } catch (error) {
+                console.error("Team Modal Load Error:", error);
+                teamModalMessage.textContent = `Error loading team data: ${error.message}`;
+                teamModalMessage.classList.remove('hidden');
+                employeeListEl.innerHTML = `<div class="text-center py-6 text-red-400">An error occurred while fetching data. Check console for details.</div>`;
+            }
+        };
+
+        function filterEmployeeList(currentTeamMap) {
+            const filterText = skillFilterEl.value.toLowerCase();
+            const filteredEmployees = allEmployees.filter(employee => 
+                employee.name.toLowerCase().includes(filterText) ||
+                employee.role?.toLowerCase().includes(filterText) ||
+                employee.skills.some(skill => skill.toLowerCase().includes(filterText))
+            );
+            renderEmployeeList(filteredEmployees, currentTeamMap);
+        }
+
+        window.closeTeamAssignmentModal = function() {
+            teamAssignmentModal.classList.add('hidden');
+            teamAssignmentModal.classList.remove('flex'); // Hide modal
+            skillFilterEl.value = '';
+        };
+
+        // --- Project Modal (Create/Edit) Logic ---
+        
+        async function populateClientSelect(selectedClientId = null) {
+            clientSelect.innerHTML = '<option value="">Client (Optional)</option>';
+            // FIX: Ensure placeholder text is dark
+            clientSelect.querySelector('option[value=""]').style.color = '#6b7280'; 
+
+            try {
+                const result = await api('list-clients');
+                result.clients.forEach(client => {
+                    const selected = (client.user_id == selectedClientId) ? 'selected' : '';
+                    // FIX: Ensure option text is dark
+                    clientSelect.innerHTML += `<option value="${client.user_id}" ${selected} style="color: #1f2937;">${client.name}</option>`;
+                });
+            } catch (error) {
+                 console.error("Error fetching clients:", error);
+            }
+        }
+        
+        window.openProjectModal = async function(mode, button = null) {
+            projectForm.reset();
+            projectModalMessage.classList.add('hidden');
+            completionSection.classList.add('hidden');
+            
+            // Default states for inputs
+            statusSelect.disabled = true; // Status is disabled by default for creation
+            clientSelect.disabled = false; // Client select is always editable during creation
+            managerNameDisplay.readOnly = true;
+
+            if (mode === 'create') {
+                projectModalTitle.textContent = 'Create New Project';
+                submitProjectBtn.textContent = 'Create Project';
+                document.getElementById('project_id_field').value = '';
+                statusSelect.value = 'Planning'; // Set default status to Planning
+                statusSelect.disabled = true; // Keep status disabled on creation
+                
+                managerNameDisplay.value = 'Auto-assigned to me'; 
+                await populateClientSelect();
+                
+            } else if (mode === 'edit' && button) {
+                const projectRow = button.closest('tr');
+                const project = JSON.parse(projectRow.dataset.project);
+                
+                projectModalTitle.textContent = `Edit Project: ${project.name}`;
+                submitProjectBtn.textContent = 'Update Project';
+                
+                document.getElementById('project_id_field').value = project.project_id;
+                projectForm.elements.name.value = project.name;
+                projectForm.elements.description.value = project.description;
+                projectForm.elements.budget.value = project.budget;
+                projectForm.elements.deadline.value = project.deadline;
+                statusSelect.value = project.status;
+                document.getElementById('completionInput').value = project.completion;
+                
+                managerNameDisplay.value = project.manager_name; 
+                
+                statusSelect.disabled = false; // FIX: Enable status dropdown when editing
+                completionSection.classList.remove('hidden');
+                
+                await populateClientSelect(project.client_id);
+            }
+            
+            projectModal.classList.remove('hidden');
+            projectModal.classList.add('flex'); // Show modal
+        };
+
+        window.closeProjectModal = function() {
+            projectModal.classList.add('hidden');
+            projectModal.classList.remove('flex'); // Hide modal
+        };
+
+        // --- Delete Handler using Custom Confirm Modal ---
+        window.triggerDeleteProject = async function(projectId, projectName) {
+            const confirmed = await showConfirm(
+                'Delete Confirmation', 
+                `Are you sure you want to permanently DELETE the project: "${projectName}"? This action is irreversible and restricted to the project creator.`, 
+                'Delete Project'
+            );
+            
+            if (confirmed) {
+                try {
+                    await api('delete-project', { method: 'DELETE', body: { project_id: projectId } });
+                    showToast(`Project "${projectName}" deleted successfully.`, 'success');
+                    loadProjects();
+                } catch (error) {
+                    showToast(`Error deleting project: ${error.message}`, 'error');
+                    console.error("Delete Error:", error);
+                }
+            }
+        }
+        
+        // Form Submit Listener (omitted for brevity, assume unchanged)
+        projectForm?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            projectModalMessage.classList.add('hidden');
+            submitProjectBtn.disabled = true;
+            submitProjectBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Processing...';
+
+            const formData = new FormData(this);
+            const projectData = Object.fromEntries(formData.entries());
+            const projectId = projectData.project_id;
+            
+            try {
+                let result;
+                if (projectId) {
+                    // PUT update
+                    result = await api('update-project', { 
+                        method: 'PUT', 
+                        body: {
+                            project_id: projectId,
+                            name: projectData.name,
+                            description: projectData.description,
+                            budget: projectData.budget,
+                            deadline: projectData.deadline,
+                            status: projectData.status,
+                            completion: projectData.completion,
+                        }
+                    });
+                } else {
+                    // POST create
+                    result = await api('create-project', { method: 'POST', body: projectData });
+                }
+
+                if (result.success) {
+                    closeProjectModal();
+                    loadProjects(); 
+                    
+                    if (!projectId) {
+                        showToast(`Project created: ${projectData.name}. Time to assign a team!`, 'success');
+                    } else {
+                        showToast(result.message, 'success');
+                    }
+                } else {
+                    throw new Error(result.error || 'Operation failed.');
+                }
+            } catch (error) {
+                console.error("Project Form Error:", error);
+                projectModalMessage.textContent = `Error: ${error.message}`;
+                projectModalMessage.classList.remove('hidden');
+                showToast(`Project save failed: ${error.message}`, 'error');
+            } finally {
+                submitProjectBtn.textContent = projectId ? 'Update Project' : 'Create Project';
+                submitProjectBtn.disabled = false;
+            }
+        });
+
+        // Team Assignment Save Button Listener (omitted for brevity, assume unchanged)
+        saveTeamBtn.addEventListener('click', async () => {
+            teamModalMessage.classList.add('hidden');
+            saveTeamBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...';
+            saveTeamBtn.disabled = true;
+            
+            const assignments = [];
+            document.querySelectorAll('.employee-checkbox:checked').forEach(checkbox => {
+                const userId = checkbox.dataset.userId;
+                // NEW: Get value from the SELECT element
+                const roleSelect = document.querySelector(`.employee-role[data-user-id="${userId}"]`);
+                const role = roleSelect.value.trim();
+                
+                if (role) {
+                    assignments.push({
+                        user_id: userId,
+                        role: role
+                    });
+                } else {
+                    // Alert user if an assigned employee has no role
+                    throw new Error(`Employee must have a role assigned.`);
+                }
+            });
+
+            if (assignments.length === 0) {
+                 const confirmedUnassign = await showConfirm(
+                     'Confirm Unassignment', 
+                     "No employees are currently selected. Continuing will remove ALL team members from this project.", 
+                     'Unassign All'
+                 );
+
+                if (!confirmedUnassign) {
+                    saveTeamBtn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-2"></i> Save Team Assignment';
+                    saveTeamBtn.disabled = false;
+                    return;
+                }
+            }
+
+            try {
+                const result = await api('assign-team', { 
+                    method: 'POST', 
+                    body: { project_id: currentProjectId, assignments: assignments } 
+                });
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    closeTeamAssignmentModal();
+                    loadProjects(); 
+                } else {
+                    throw new Error(result.error || 'Team assignment failed.');
+                }
+            } catch (error) {
+                console.error("Assignment Error:", error);
+                teamModalMessage.textContent = `Error: ${error.message}`;
+                teamModalMessage.classList.remove('hidden');
+                showToast(`Team assignment failed: ${error.message}`, 'error');
+            } finally {
+                saveTeamBtn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-2"></i> Save Team Assignment';
+                saveTeamBtn.disabled = false;
+            }
+        });
+
+
+        // --- Main Load Function ---
+        async function loadProjects() {
+            const loadingState = document.getElementById('loadingState');
+            loadingState.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-cyan-400 text-3xl mb-3"></i><p class="text-gray-300">Loading projects...</p>';
+            mainContent.replaceChildren(loadingState);
+
+            try {
+                const result = await api('get-manager-projects');
+                
+                if (result.success) {
+                    // Assuming the manager_id is returned in the stats object on load.
+                    if (result.stats.current_manager_id) {
+                        currentManagerId = result.stats.current_manager_id;
+                    }
+                    
+                    mainContent.innerHTML = renderProjectCards(result.stats) + renderProjectTable(result.projects);
+                    // RENDER CHART AFTER CONTENT IS IN PLACE
+                    renderCharts(result.stats.statusCounts);
+                } else {
+                    throw new Error(result.error || 'Failed to load projects.');
+                }
+
+            } catch (error) {
+                console.error("Project Load Error:", error);
+                let displayError = error.message;
+                
+                if (error.message.includes("Authorization failed")) {
+                    displayError = `<p class="text-2xl font-semibold text-red-400 mb-4">Authentication Required</p><p class="text-lg text-gray-300">Session expired or Manager role not confirmed. Please re-login.</p>`;
+                    showToast("Authentication Failed: Please log in as a Manager.", 'error');
+                } else {
+                    displayError = `<p class="text-2xl font-semibold text-red-400 mb-4">Error Loading Projects</p><p class="text-lg text-gray-300">${displayError}</p>`;
+                    showToast(`Critical Error: ${error.message}`, 'error');
+                }
+                mainContent.innerHTML = `<div class="glass-card text-center py-10">${displayError}</div>`;
+            }
+        }
+        
+        // Initialize on load
+        loadProjects();
+
+    })();
+    </script>
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+  logActivity('VIEW_PROJECTS', 'Viewed projects tab');
+});
+</script>
+</body>
+</html>

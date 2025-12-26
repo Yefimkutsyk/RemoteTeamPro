@@ -1,0 +1,169 @@
+
+<!-- Unified Admin Profile Section -->
+<div class="p-4 flex justify-center">
+  <div id="profileCard" class="card max-w-2xl w-full p-6 shadow-xl rounded-2xl bg-gradient-to-br from-white/5 to-blue-900/10 border border-blue-400/20">
+    <!-- Profile content loads here -->
+  </div>
+</div>
+<script>
+const PROFILE_API = "/RemoteTeamPro/backend/api/profile.php";
+const UPLOAD_API = "/RemoteTeamPro/backend/api/upload_profile_picture.php";
+const EMAIL_OTP_API = "/RemoteTeamPro/backend/api/email_verification.php";
+
+function escapeHtml(s){ if (!s) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+async function loadProfile() {
+  const card = document.getElementById('profileCard');
+  card.innerHTML = '<div class="text-gray-400">Loading...</div>';
+  try {
+    const res = await fetch(`${PROFILE_API}?action=current`, { credentials:'include' });
+    const user = await res.json();
+    if (user.error) { card.innerHTML = `<div class="text-red-400">${user.error}</div>`; return; }
+
+    card.innerHTML = `
+      <div class="flex flex-col items-center mb-6">
+        <div class="relative">
+          <img src="${user.profile_picture_url ? escapeHtml(user.profile_picture_url) + '?t=' + Date.now() : '/RemoteTeamPro/frontend/assets/images/index/default-profile.png'}" alt="Profile Picture" id="profilePicPreview" class="w-28 h-28 rounded-full object-cover border-4 border-blue-400 shadow-lg">
+          <label for="profilePicInput" class="absolute bottom-2 right-2 bg-blue-600 text-white rounded-full p-2 cursor-pointer shadow-md hover:bg-blue-700 transition">
+            <i class="fas fa-camera"></i>
+          </label>
+          <input type="file" id="profilePicInput" accept="image/*" class="hidden">
+        </div>
+        <button type="button" id="uploadPicBtn" class="mt-2 px-3 py-1 rounded bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition">Upload Picture</button>
+        <h2 class="mt-4 text-2xl font-bold text-blue-300">${escapeHtml(user.first_name||'')} ${escapeHtml(user.last_name||'')}</h2>
+        <div class="text-sm text-blue-200">Admin • Company #${escapeHtml(user.company_id||'')}</div>
+      </div>
+      <form id="profileForm" class="space-y-4">
+        <div class="flex items-center gap-3">
+          <i class="fas fa-user text-blue-400"></i>
+          <input name="first_name" value="${escapeHtml(user.first_name||'')}" class="w-full p-2 rounded-lg bg-white/10 text-lg font-semibold" placeholder="First Name">
+        </div>
+        <div class="flex items-center gap-3">
+          <i class="fas fa-user text-blue-400"></i>
+          <input name="last_name" value="${escapeHtml(user.last_name||'')}" class="w-full p-2 rounded-lg bg-white/10 text-lg font-semibold" placeholder="Last Name">
+        </div>
+        <div class="flex items-center gap-3">
+          <i class="fas fa-phone text-blue-400"></i>
+          <input name="contact_number" value="${escapeHtml(user.contact_number||'')}" class="w-full p-2 rounded-lg bg-white/10" placeholder="Contact Number">
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-blue-300">Email</label>
+          <div class="flex gap-2 items-center">
+            <input name="email" id="emailField" value="${escapeHtml(user.email||'')}" class="w-full p-2 rounded-lg bg-white/10" readonly>
+            <button type="button" id="changeEmailBtn" class="px-2 py-1 rounded bg-purple-600 text-white font-semibold shadow hover:bg-purple-700 transition">Change Email</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <i class="fas fa-building text-blue-400"></i>
+          <input name="company_id" value="${escapeHtml(user.company_id||'')}" class="w-full p-2 rounded-lg bg-white/10" readonly>
+        </div>
+        <div class="flex items-center gap-3">
+          <i class="fas fa-id-badge text-blue-400"></i>
+          <input name="user_id" value="${escapeHtml(user.user_id||'')}" class="w-full p-2 rounded-lg bg-white/10" readonly>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+          <button type="submit" class="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition">Save Changes</button>
+        </div>
+      </form>
+      <div id="emailOtpArea" class="mt-6 hidden bg-white/10 p-4 rounded-lg">
+        <label class="text-sm font-semibold text-blue-300">New Email</label>
+        <input type="email" id="newEmailInput" class="w-full p-2 rounded-lg bg-white/10 mb-2" placeholder="Enter new email">
+        <button type="button" id="sendOtpBtn" class="px-2 py-1 rounded bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition">Send OTP</button>
+        <input type="text" id="otpInput" maxlength="6" placeholder="Enter OTP" class="w-full p-2 rounded-lg bg-white/10 mt-2">
+        <button type="button" id="verifyOtpBtn" class="px-2 py-1 rounded bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition mt-2">Verify & Change Email</button>
+        <div id="otpMsg" class="text-sm mt-2 text-blue-200"></div>
+      </div>
+    `;
+
+    // Profile picture upload logic
+    document.getElementById('uploadPicBtn').onclick = async function() {
+      const fileInput = document.getElementById('profilePicInput');
+      if (!fileInput.files.length) return alert('Select a picture first');
+      const formData = new FormData();
+      formData.append('avatar', fileInput.files[0]);
+      const res = await fetch(UPLOAD_API, { method:'POST', body:formData });
+      const json = await res.json();
+      if (json.status === 'success') {
+        document.getElementById('profilePicPreview').src = json.url + '?t=' + Date.now();
+        // Update profile_picture_url in database
+        await fetch(`${PROFILE_API}?action=update`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profile_picture_url: json.url })
+        });
+        // Dispatch event to update top bar avatar
+        window.dispatchEvent(new CustomEvent('profilePictureUpdated', { detail: { url: json.url } }));
+        showToast('Profile picture updated');
+      } else {
+        alert(json.message || 'Upload failed');
+      }
+    };
+
+    // Profile save logic
+    document.getElementById('profileForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      // Always include current profile_picture_url
+      const currentPic = document.getElementById('profilePicPreview').src;
+      // Remove cache-busting if present
+      const picUrl = currentPic.split('?')[0];
+      formData.set('profile_picture_url', picUrl);
+      const payload = Object.fromEntries(formData.entries());
+      const res = await fetch(`${PROFILE_API}?action=update`, {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (json.message) showToast(json.message);
+      else alert(json.error || 'Failed to update profile');
+    };
+
+    // Email change logic
+    document.getElementById('changeEmailBtn').onclick = function() {
+      document.getElementById('emailOtpArea').classList.remove('hidden');
+    };
+    document.getElementById('sendOtpBtn').onclick = async function() {
+      const newEmail = document.getElementById('newEmailInput').value.trim();
+      if (!newEmail) return alert('Enter new email');
+      const res = await fetch(`${EMAIL_OTP_API}?action=send`, {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email: newEmail })
+      });
+      const json = await res.json();
+      document.getElementById('otpMsg').innerText = json.message || json.error || '';
+    };
+    document.getElementById('verifyOtpBtn').onclick = async function() {
+      const newEmail = document.getElementById('newEmailInput').value.trim();
+      const otp = document.getElementById('otpInput').value.trim();
+      if (!newEmail || !otp) return alert('Enter email and OTP');
+      const res = await fetch(`${EMAIL_OTP_API}?action=verify`, {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email: newEmail, otp })
+      });
+      const json = await res.json();
+      document.getElementById('otpMsg').innerText = json.message || json.error || '';
+      if (json.message) {
+        document.getElementById('emailField').value = newEmail;
+        showToast('Email changed');
+        setTimeout(()=>document.getElementById('emailOtpArea').classList.add('hidden'), 1200);
+      }
+    };
+  } catch(err) {
+    document.getElementById('profileCard').innerHTML = `<div class="text-red-400">${err.message}</div>`;
+  }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast fixed bottom-6 right-6 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+  t.innerText = msg;
+  document.body.appendChild(t);
+  setTimeout(()=> t.remove(), 2500);
+}
+
+loadProfile();
+</script>

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Document Metadata -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RemoteTeamPro - Your Ultimate Remote Team Management Solution</title>
+    <link rel="icon" type="image/png" href="../assets/images/index/favicon.png">
+    <!-- External Stylesheets and Libraries -->
+    <!-- Tailwind CSS CDN: A utility-first CSS framework for rapid UI development -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Importing 'Manrope' font for a modern and clean typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Custom Stylesheet -->
+    <!-- Corrected path to index.css: Go up one directory (..) then into the css folder -->
+    <link rel="stylesheet" href="../css/index.css">
+</head>
+<body class="antialiased">
+    <!-- Header Section: Contains the navigation bar -->
+    <header>
+        <div class="navbar-container">
+            <!-- Brand Logo/Name in Header -->
+            <div class="text-2xl font-extrabold text-white tracking-wide">
+                RemoteTeamPro
+            </div>
+            <!-- Curved Navigation Bar (Desktop View) -->
+            <div class="curved-navbar hidden md:flex">
+                <!-- Navigation Links -->
+                <nav class="space-x-8 lg:space-x-10 items-center">
+                    <a href="#hero" class="nav-link scroll-link">Home</a>
+                    <a href="#features" class="nav-link scroll-link">Features</a>
+                    <a href="#about-us" class="nav-link scroll-link">About Us</a>
+                    <a href="#faq" class="nav-link scroll-link">FAQ</a>
+                    <a href="#contact" class="nav-link scroll-link">Contact</a>
+                </nav>
+                <!-- Login Button - Corrected href to login.html -->
+                <a href="login.html" class="btn-primary ml-6">Login</a>
+            </div>
+            <!-- Mobile Menu Button (Hamburger Icon) -->
+            <!-- This button would typically be handled by JavaScript to toggle a mobile navigation menu -->
+            <div class="md:hidden">
+                <button class="text-white text-3xl focus:outline-none">
+                    &#9776; <!-- Unicode for Hamburger icon -->
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area - Hero Section -->
+    <main class="flex-grow flex items-center justify-center pt-32 pb-16 lg:pt-40 lg:pb-32" id="hero">
+        <!-- Background Overlay for the Hero Section Image -->
+        <div class="hero-background-overlay"></div>
+
+        <!-- Hero Content Wrapper: Contains text and image -->
+        <div class="hero-content-wrapper container mx-auto">
+            <!-- Hero Text Content (Left Side) -->
+            <div class="hero-text-content">
+                <!-- Tagline/Mini-Heading with animation -->
+                <p class="text-xl md:text-2xl font-medium text-purple-300 mb-4 animate-on-scroll" style="animation-delay: 0.1s;">
+                    Strategic Remote Enablement
+                </p>
+                <!-- Main Hero Title (H1) with animation and purple accent -->
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 hero-title-h1 animate-on-scroll" style="animation-delay: 0.2s;">
+                    Transforming <br>Global <span class="text-purple-400">Workforces</span>.
+                </h1>
+                <!-- Hero Description Paragraph with animation -->
+                <p class="text-lg text-gray-300 mb-10 animate-on-scroll" style="animation-delay: 0.25s;">
+                    Streamline workflows, enhance communication, and boost productivity for your distributed team.
+                </p>
+                <!-- Call-to-action Buttons with animation -->
+                <div class="flex flex-col sm:flex-row space-y-5 sm:space-y-0 sm:space-x-6 animate-on-scroll" style="animation-delay: 0.3s;">
+                    <!-- Get Started Button: Links to the login/registration page -->
+                    <button id="getStartedBtn" class="btn-primary" onclick="window.location.href='register.html'">
+                        Get Started Free
+                    </button>
+                    <!-- Learn More Button: Scrolls to the features section -->
+                    <button id="learnMoreBtn" class="btn-secondary">
+                        Learn More
+                    </button>
+                </div>
+            </div>
+            <!-- Hero Image Container (Right Side) -->
+            <div class="hero-image-container mt-12 lg:mt-0 animate-on-scroll" style="animation-delay: 0.4s;">
+                <!-- Image of a Modern Remote Workspace from Unsplash -->
+               <img src="../assets/images/index/dashboard.png"  alt="Modern Remote Workspace" class="w-full h-auto rounded-lg shadow-2xl">
+            </div>
+        </div>
+    </main>
+
+    <!-- Marquee Section (After Hero, Global Value Proposition) -->
+    <div class="marquee-container">
+        <div class="marquee-content">
+            <!-- Duplicated content for seamless loop effect -->
+            <span class="marquee-text-item">🗺 Global Collaboration</span>
+            <span class="marquee-text-item">🗓 Boost Productivity</span>
+            <span class="marquee-text-item">✉ Seamless Communication</span>
+            <span class="marquee-text-item">𖣠 Innovative Solutions</span>
+            <span class="marquee-text-item">🛡 Data Security</span>
+            <span class="marquee-text-item">⏱ Efficient Time Tracking</span>
+            <span class="marquee-text-item">⚙ Automated Workflows</span>
+            <span class="marquee-text-item">𓊍 Insightful Analytics</span>
+            <span class="marquee-text-item">☀︎ Empower Your Team</span>
+            <span class="marquee-text-item">☑ Project Success</span>
+
+            <!-- Duplicate content to ensure smooth looping animation -->
+            <span class="marquee-text-item">🗺 Global Collaboration</span>
+            <span class="marquee-text-item">🗓 Boost Productivity</span>
+            <span class="marquee-text-item">✉ Seamless Communication</span>
+            <span class="marquee-text-item">𖣠 Innovative Solutions</span>
+            <span class="marquee-text-item">🛡 Data Security</span>
+            <span class="marquee-text-item">⏱ Efficient Time Tracking</span>
+            <span class="marquee-text-item">⚙ Automated Workflows</span>
+            <span class="marquee-text-item">𓊍 Insightful Analytics</span>
+            <span class="marquee-text-item">☀︎ Empower Your Team</span>
+            <span class="marquee-text-item">☑ Project Success</span>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 animate-on-scroll">
+        <div class="container mx-auto">
+            <!-- Section Heading for Features -->
+            <h2 class="text-4xl font-bold text-white mb-16 animate-on-scroll text-left" data-animate-threshold="0.1">Key Features</h2>
+            <!-- Grid Layout for Feature Boxes (Bento Box Design) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- SVG Gradient Definitions for Icons -->
+                <!-- This SVG element contains reusable linear gradients used to color the icons throughout the page. -->
+                <svg width="0" height="0" style="position:absolute;z-index:-1;">
+                    <defs>
+                        <!-- Main Icon Gradient: Purple to darker purple -->
+                        <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" /> <!-- Bright Purple -->
+                            <stop offset="100%" style="stop-color:#6D28D9;stop-opacity:1" /> <!-- Darker Purple -->
+                        </linearGradient>
+                        <!-- Nodes Gradient (from previous iterations, kept for fallback) -->
+                        <linearGradient id="nodesGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#8B5CF6" stop-opacity="1" />
+                            <stop offset="100%" stop-color="#6D28D9" stop-opacity:1" />
+                        </linearGradient>
+                        <!-- Hero Gradient (from previous iterations, kept for fallback) -->
+                        <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#8B5CF6" stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#6D28D9;stop-opacity:1" />
+                        </linearGradient>
+                        <!-- Hero Gradient Line (from previous iterations, kept for fallback) -->
+                        <linearGradient id="heroGradientLine" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#A78BFA" stop-opacity="1" />
+                            <stop offset="100%" stop-color="#8B5CF6" stop-opacity="1" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+
+                <!-- Feature 1: User & Team Management (Large card with partial image on left) -->
+                <div class="feature-box animate-on-scroll lg:col-span-2 partial-image-card">
+                    <!-- Inner glow effect for aesthetic appeal -->
+                    <div class="feature-inner-glow"></div>
+                    <!-- Left Part: Image background for visual appeal -->
+                    <div class="image-part w-2/5 relative" style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');">
+                        <!-- Dark overlay on image for text readability -->
+                        <div class="absolute inset-0 bg-black opacity-20"></div>
+                    </div>
+                    <!-- Right Part: Text content for the feature -->
+                    <div class="text-part">
+                        <!-- Heading and Icon for User & Team Management -->
+                        <div class="flex justify-between items-center w-full mb-4">
+                            <h3 class="text-2xl font-semibold text-white">User & Team Management</h3>
+                            <!-- Icon representing user and team management (filled with iconGradient) -->
+                            <svg class="feature-icon" viewBox="0 0 24 24">
+                                <path class="feature-icon-gradient" fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm2 14h-4v-4h-4V8h8v8zM12 4a8 8 0 100 16 8 8 0 000-16z" clip-rule="evenodd"/>
+                                <path class="feature-icon-gradient" d="M9 11h2v2H9v-2z" fill="#fff"/>
+                            </svg>
+                        </div>
+                        <!-- Feature Description -->
+                        <p class="text-gray-300 text-left">Secure login, role-based access, profile customization, and project creation & assignment.</p>
+                        <!-- Key Statistic: Number of projects managed -->
+                        <div class="mt-4 text-purple-300 font-bold text-3xl">4+</div>
+                        <p class="text-gray-400 text-sm">Projects Managed</p>
+                    </div>
+                </div>
+
+                <!-- Feature 2: Reporting & Analytics (Standard sized card with prominent statistic) -->
+                <div class="p-8 feature-box animate-on-scroll lg:col-span-1">
+                    <!-- Inner glow effect -->
+                    <div class="feature-inner-glow"></div>
+                    <!-- Heading and Icon for Reporting & Analytics -->
+                    <div class="flex justify-between items-center w-full mb-4">
+                        <h3 class="text-2xl font-semibold text-white">Reporting & Analytics</h3>
+                        <!-- Icon representing charts/analytics (filled with iconGradient) -->
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path class="feature-icon-gradient" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                        </svg>
+                    </div>
+                    <!-- Feature Description -->
+                    <p class="text-gray-300 text-left mb-4">Exportable reports, visual dashboards with KPIs, and activity logs for insights.</p>
+                    <!-- Key Statistic: Efficiency Gain percentage -->
+                    <div class="text-purple-300 font-bold text-3xl mt-auto">45%</div>
+                    <p class="text-gray-400 text-sm">Efficiency Gain</p>
+                </div>
+
+                <!-- Feature 3: Communication & Messaging (Standard sized card with prominent statistic) -->
+                <div class="p-8 feature-box animate-on-scroll lg:col-span-1">
+                    <!-- Inner glow effect -->
+                    <div class="feature-inner-glow"></div>
+                    <!-- Heading and Icon for Communication & Messaging -->
+                    <div class="flex justify-between items-center w-full mb-4">
+                        <h3 class="text-2xl font-semibold text-white">Communication & Messaging</h3>
+                        <!-- Icon representing chat bubbles/messages (filled with iconGradient) -->
+                        <svg class="feature-icon" viewBox="0 0 24 24">
+                            <path class="feature-icon-gradient" d="M21 4a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h4l3 3 3-3h4a2 2 0 002-2V4z"/>
+                            <path class="feature-icon-gradient" d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="#fff"/>
+                        </svg>
+                    </div>
+                    <!-- Feature Description -->
+                    <p class="text-gray-300 text-left mb-4">Internal messaging with filtering, notifications for updates, and client-manager panel.</p>
+                    <!-- Key Statistic: Team Engagement percentage -->
+                    <div class="text-purple-300 font-bold text-5xl mt-auto">95%</div>
+                    <p class="text-gray-400 text-sm">Team Engagement</p>
+                </div>
+
+                <!-- Feature 4: Task Tracking & Performance Monitoring (Large card with sub-sections and images) -->
+                <div class="p-8 feature-box animate-on-scroll lg:col-span-2">
+                    <!-- Inner glow effect -->
+                    <div class="feature-inner-glow"></div>
+                    <!-- Heading and Icon for Task Tracking -->
+                    <div class="flex items-center w-full mb-4 gap-4">
+                        <!-- Icon representing task/performance (filled with iconGradient) -->
+                        <svg class="feature-icon !mb-0" viewBox="0 0 24 24" fill="currentColor">
+                            <path class="feature-icon-gradient" d="M16 11h-2V9h-2V7h-2V5h2V3h2v2h2v2h-2v2h2v2zM12 21a9 9 0 100-18 9 9 0 000 18zm0-2a7 7 0 110-14 7 7 0 010 14z"/>
+                            <path class="feature-icon-gradient" d="M12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                        </svg>
+                        <h3 class="text-2xl font-semibold text-white">Task Tracking & Performance Monitoring</h3>
+                    </div>
+                    <!-- Feature Description -->
+                    <p class="text-gray-300 text-left mb-6">Monitor tasks with status updates, progress dashboards for all roles, and track history by priority.</p>
+                    <!-- Sub-sections with mini-cards and images -->
+                    <div class="flex flex-col sm:flex-row gap-4 w-full">
+                        <!-- Mini-Card for Task Status Updates -->
+                        <div class="mini-card flex-1">
+                            <span>Task Status Updates</span>
+                            <!-- Placeholder image for visual representation -->
+                            <img src="https://images.unsplash.com/photo-1581089781785-603411fa81e5?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Task Status Updates" class="w-full h-20 rounded-md mt-4 object-cover">
+                        </div>
+                        <!-- Mini-Card for Progress Dashboards -->
+                        <div class="mini-card flex-1">
+                            <span>Progress Dashboards</span>
+                            <!-- Placeholder image for visual representation -->
+                            <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Progress Dashboards" class="w-full h-20 rounded-md mt-4 object-cover">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature 5: Enhanced Client Dashboard (Large card, half content, half image) -->
+                <div class="feature-box animate-on-scroll lg:col-span-2 client-portal-card">
+                    <!-- Inner glow effect -->
+                    <div class="feature-inner-glow"></div>
+                    <!-- Left Part: Content for the client dashboard -->
+                    <div class="content-half">
+                        <!-- Heading and Icon for Client Dashboard -->
+                        <div class="flex justify-between items-center w-full mb-4">
+                            <h3 class="text-2xl font-semibold text-white">Enhanced Client Dashboard</h3>
+                            <!-- Icon representing a client user/profile (filled with iconGradient) -->
+                            <svg class="feature-icon" viewBox="0 0 24 24">
+                                <path class="feature-icon-gradient" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                        </div>
+                        <!-- Feature Description -->
+                        <p class="text-gray-300 text-left">Premium dashboard with project overviews, progress graphs, downloadable reports, and direct access to project managers.</p>
+                    </div>
+                    <!-- Right Part: Image background -->
+                    <div class="image-half" style="background-image: url('https://images.unsplash.com/photo-1683803055067-1ca1c17cb2b9?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');">
+                        <!-- Image is set via background-image in CSS for better control -->
+                    </div>
+                </div>
+
+                <!-- Feature 6: Attendance & Time Tracking (Standard sized card) -->
+                <div class="p-8 feature-box animate-on-scroll lg:col-span-1">
+                    <!-- Inner glow effect -->
+                    <div class="feature-inner-glow"></div>
+                    <!-- Heading and Icon for Attendance & Time Tracking -->
+                    <div class="flex justify-between items-center w-full mb-4">
+                        <h3 class="text-2xl font-semibold text-white">Attendance & Time Tracking</h3>
+                        <!-- Icon representing a clock/time (filled with iconGradient) -->
+                        <svg class="feature-icon" viewBox="0 0 24 24">
+                            <path class="feature-icon-gradient" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z"/>
+                            <path class="feature-icon-gradient" d="M11.5 7h1v6h-1z" fill="#fff" transform-origin="12px 12px"/>
+                        </svg>
+                    </div>
+                    <!-- Feature Description -->
+                    <p class="text-gray-300 text-left">Daily attendance logging, time tracking linked to tasks, and viewable timesheets for managers.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+<!------------------------------------------------------------------------- -->
+
+<!-- Companies Section (before About Us) -->
+<section id="companies" class="py-20 bg-gradient-to-b from-gray-900 to-black">
+  <div class="container mx-auto px-6 lg:px-12">
+    <!-- Section Heading -->
+    <h2 class="text-4xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 mb-12">
+      Discover Companies
+    </h2>
+
+    <!-- Companies Grid (populated dynamically) -->
+    <div id="companiesGrid" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 text-gray-300">
+      <!-- Dynamic content loads here -->
+      <div class="col-span-full text-center" id="companiesLoading">
+        <p class="text-gray-400">Loading companies...</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// Helper function to truncate text
+function truncate(str, num) {
+  if (!str) return "No services listed.";
+  if (str.length <= num) return str;
+  return str.slice(0, num) + '...';
+}
+document.addEventListener("DOMContentLoaded", () => {
+  const companiesGrid = document.getElementById("companiesGrid");
+  const companiesLoading = document.getElementById("companiesLoading");
+  const companyDropdown = document.getElementById("company-id"); // for contact form if exists
+
+    fetch("http://localhost/RemoteTeamPro/backend/api/companies.php")
+        .then(res => res.json())
+        .then(data => {
+            const companies = data.data || [];
+            if (!Array.isArray(companies) || companies.length === 0) {
+                companiesGrid.innerHTML = `
+                    <div class="col-span-full text-center">
+                        <p class="text-gray-400">No companies found yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            companiesLoading.remove(); // remove loading state
+
+            companiesGrid.innerHTML = companies.map(company => `
+                              <a href="/RemoteTeamPro/backend/api/company_profile.php?id=${company.company_id}" 
+
+                     class="block bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-700 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+                    <div class="p-6 flex flex-col h-full justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-3">${company.company_name}</h3>
+                            <div class="text-xs uppercase text-purple-400 font-semibold mb-2">Services</div>
+                            <p class="text-sm text-gray-300 mb-4 h-16 overflow-hidden">
+                                ${truncate(company.services, 100)}
+                            </p>
+                        </div>
+                        <span 
+                            class="mt-auto inline-block px-5 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:shadow-lg hover:scale-105 transition-transform duration-200 text-center"
+                        >
+                            View Profile
+                        </span>
+                    </div>
+                </a>
+            `).join("");
+
+            // Populate company dropdown in contact form (if exists)
+            if (companyDropdown) {
+                companyDropdown.innerHTML += companies.map(c => 
+                    `<option value="${c.company_id}">${c.company_name}</option>`
+                ).join("");
+            }
+        })
+        .catch(err => {
+            console.error("Error loading companies:", err);
+            companiesGrid.innerHTML = `
+                <div class="col-span-full text-center">
+                    <p class="text-red-500">Failed to load companies. Please try again later.</p>
+                </div>
+            `;
+        });
+});
+</script>
+
+
+<!------------------------------------------------------------------------- -->
+
+<!-- Call to Action Section (After Companies) -->
+<section id="cta" class="relative py-20 bg-black text-center">
+  <div class="container mx-auto px-6 relative z-10">
+    <!-- Heading -->
+    <h2 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 mb-6">
+      Power Your Business with RemoteTeamPro
+    </h2>
+
+    <!-- Subtext -->
+    <p class="max-w-2xl mx-auto text-lg text-gray-400 mb-10 leading-relaxed">
+      Unlock the future of work with our all-in-one <span class="text-purple-400 font-semibold">Remote Team Management System</span>. 
+      Streamline communication, projects, and productivity — all in one place.
+    </p>
+
+    <!-- Action Button -->
+    <a href="company_register.html" 
+       class="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg font-semibold rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-transform duration-300 inline-flex items-center gap-2">
+      <i class="fa-solid fa-building"></i> Register Your Company
+    </a>
+  </div>
+
+  <!-- Subtle Glow Background -->
+  <div class="absolute inset-0 bg-gradient-to-r from-purple-800/20 via-pink-700/10 to-transparent blur-2xl"></div>
+</section>
+
+
+
+
+
+
+
+
+
+
+<!------------------------------------------------------------------------- -->
+    <!-- About Us Section -->
+    <section id="about-us" class="py-20 animate-on-scroll">
+        <!-- Overlay for the background GIF to improve text readability -->
+        <div class="about-us-background-overlay"></div>
+        <div class="container">
+            <!-- About Us Section Heading -->
+            <h2 class="text-4xl font-bold text-white mb-8 animate-on-scroll">About Us</h2>
+            <!-- Content Wrapper for Text and GIF -->
+            <div class="about-content-wrapper">
+                <!-- About Us Text Column -->
+                <div class="about-text-column">
+                    <!-- Justified text for a clean paragraph appearance -->
+                    <p class="text-lg text-gray-300 mb-6 text-justify">
+                        RemoteTeamPro is a powerful software platform designed to streamline remote team management. We help teams collaborate, communicate, and manage projects efficiently—no matter where they are in the world. Built for modern businesses, our solution removes geographical barriers and supports seamless workflows with intuitive tools and secure infrastructure. At RemoteTeamPro, we’re more than just a tool—we’re your partner in building a productive and connected remote work culture. With continuous innovation and user-focused features, we aim to redefine how distributed teams work together and succeed in today’s fast-evolving digital landscape.
+                    </p>
+                </div>
+                <!-- Tenor GIF Embed for Productivity Visualization -->
+                <div class="productivity-gif-container">
+                    <div class="tenor-gif-embed" data-postid="818238279004381316" data-share-method="host" data-aspect-ratio="1.76596" data-width="100%">
+                        <a href="https://tenor.com/view/coding-gif-818238279004381316">Coding GIF</a> from <a href="https://tenor.com/search/coding-gifs">Coding GIFs</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Marquee Section (Below About Us, as a continuous footer message) -->
+            <div class="marquee-container about-marquee-card">
+                <div class="marquee-content">
+                    <!-- Duplicated content for seamless looping copyright/trademark message -->
+                    <span class="marquee-text-item"> RemoteTeamPro™ © 2025 - Unlocking Remote Potential - All Rights Reserved.</span>
+                    <span class="marquee-text-item"> RemoteTeamPro™ © 2025 - Unlocking Remote Potential - All Rights Reserved.</span>
+                    <span class="marquee-text-item"> RemoteTeamPro™ © 2025 - Unlocking Remote Potential - All Rights Reserved.</span>
+                    <span class="marquee-text-item"> RemoteTeamPro™ © 2025 - Unlocking Remote Potential - All Rights Reserved.</span>
+                    <span class="marquee-text-item"> RemoteTeamPro™ © 2025 - Unlocking Remote Potential - All Rights Reserved.</span>
+                    <span class="marquee-text-item"> RemoteTeamPro™ © 2025 - Unlocking Remote Potential - All Rights Reserved.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 animate-on-scroll">
+        <!-- FAQ Section Container with a max-width for better readability -->
+        <div class="container mx-auto max-w-6xl faq-section-container">
+            <!-- Grid Layout for FAQ Content (Heading/Description and Accordion Items) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Left Column: FAQ Section Heading and Description -->
+                <div class="text-left">
+                    <!-- FAQ Tag -->
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-800 px-3 py-1 rounded-full mb-4 inline-block">FAQs</span>
+                    <!-- Main FAQ Heading with purple accent -->
+                    <h2 class="text-5xl font-extrabold text-white mb-6">Frequently asked <br><span class="text-purple-400">questions</span></h2>
+                    <!-- FAQ Description -->
+                    <p class="text-lg text-gray-400 leading-relaxed">
+                        Make smarter decisions and scale effortlessly with advanced analytics.
+                    </p>
+                </div>
+
+                <!-- Right Column: Accordion Items for FAQs -->
+                <div class="space-y-4">
+                    <!-- FAQ Item 1: What is the Remote Team Management System? -->
+                    <div class="faq-item">
+                        <button class="faq-question">
+                            What is the Remote Team Management System?
+                        </button>
+                        <div class="faq-answer">
+                            <p>It’s a web-based platform built with PHP and MySQL to help manage remote teams by organizing tasks, tracking progress, logging attendance, and simplifying communication among admins, managers, employees, and clients.</p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 2: Who can use this system? -->
+                    <div class="faq-item">
+                        <button class="faq-question">
+                            Who can use this system?
+                        </button>
+                        <div class="faq-answer">
+                            <p>There are four roles: Admin, Manager, Employee, and Client—each with specific tools tailored to their responsibilities within the system.</p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 3: Can clients see project progress in real time? -->
+                    <div class="faq-item">
+                        <button class="faq-question">
+                            Can clients see project progress in real time?
+                        </button>
+                        <div class="faq-answer">
+                            <p>Yes. Clients have a dedicated portal with a clean dashboard showing real-time updates, milestones, downloadable reports, and communication with the assigned manager.</p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 4: How is task tracking handled? -->
+                    <div class="faq-item">
+                        <button class="faq-question">
+                            How is task tracking handled?
+                        </button>
+                        <div class="faq-answer">
+                            <p>Managers assign tasks, and employees update their progress. Statuses and completion percentages are displayed in dashboards for both managers and clients to monitor.</p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 5: Is the system secure? -->
+                    <div class="faq-item">
+                        <button class="faq-question">
+                            Is the system secure?
+                        </button>
+                        <div class="faq-answer">
+                            <p>Absolutely. It uses encrypted passwords, secure sessions, and input validation to ensure user data and system operations remain protected.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 animate-on-scroll">
+        <!-- Contact Section Container -->
+        <div class="container mx-auto contact-section-container">
+            <!-- Contact Content Wrapper (Grid for Text and Form) -->
+            <div class="contact-content-wrapper">
+                <!-- Left Column: Contact Section Heading and Description -->
+                <div class="contact-text-column">
+                    <!-- Contact Tag -->
+                    <span class="tag">Contact Us</span>
+                    <!-- Contact Section Heading -->
+                    <h2>How can we <br>help you?</h2>
+                    <!-- Contact Description Paragraph -->
+                    <p>Our team is here to help you access capital and grow on your terms. Check out the resources below and reach out directly if you have any questions.</p>
+                    <!-- Button to navigate to FAQ section -->
+                    <button id="searchFaqBtn" class="btn-faq">Search FAQs</button>
+                </div>
+
+                <!-- Right Column: Contact Form Card -->
+                <div class="contact-form-card">
+                    <!-- Contact Form -->
+                    <form id="contactForm" action="http://localhost/RemoteTeamPro/backend/api/contact_handler.php" method="POST">
+                        <!-- Name Input Fields (Two columns on small screens, one on mobile) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="first-name" class="block text-gray-700 text-sm font-medium mb-1">First name*</label>
+                                <input type="text" id="first-name" name="first_name" placeholder="First Name" required>
+                            </div>
+                            <div>
+                                <label for="last-name" class="block text-gray-700 text-sm font-medium mb-1">Last name*</label>
+                                <input type="text" id="last-name" name="last_name" placeholder="Last Name" required>
+                            </div>
+                        </div>
+                        <!-- Company Email Input Field -->
+                        <div>
+                            <label for="company-email" class="block text-gray-700 text-sm font-medium mb-1">Company Email*</label>
+                            <input type="email" id="company-email" name="company_email" placeholder="Company Email" required>
+                        </div>
+                        <!-- Company Selection Dropdown -->
+                        <div>
+                            <label for="company-id" class="block text-gray-700 text-sm font-medium mb-1">Company*</label>
+                            <select id="company-id" name="company_id" required>
+                                <option value="">Select a company</option>
+                            </select>
+                        </div>
+                        <!-- Topic Selection Dropdown -->
+                        <div>
+                            <label for="topic" class="block text-gray-700 text-sm font-medium mb-1">Topic*</label>
+                            <select id="topic" name="topic" required>
+                                <option value="">Please select</option>
+                                <option value="general-inquiry">General Inquiry</option>
+                                <option value="technical-support">Technical Support</option>
+                                <option value="billing-inquiry">Billing Inquiry</option>
+                                <option value="partnership">Partnership</option>
+                            </select>
+                        </div>
+                        <!-- Message Textarea -->
+                        <div>
+                            <label for="message" class="block text-gray-700 text-sm font-medium mb-1">Message*</label>
+                            <textarea id="message" name="message" rows="5" placeholder="Your message..." required></textarea>
+                        </div>
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn-submit">Submit</button>
+                        <!-- Privacy Policy Text and Links -->
+                        <p class="privacy-text">
+                            By pressing submit you agree to the Pipe <a href="#" class="font-semibold">terms of service</a> and <a href="#" class="font-semibold">privacy policy</a>.
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="main-footer">
+        <div class="container mx-auto px-6 md:px-10 lg:px-16 pb-8">
+            <!-- Footer Grid for Links -->
+            <div class="footer-grid">
+                <!-- Column 1: Features Links -->
+                <div class="footer-section-with-line">
+                    <h4 class="footer-heading">Features</h4>
+                    <ul class="footer-link-list">
+                        <li><a href="#features" class="nav-link scroll-link">User & Team Management</a></li>
+                        <li><a href="#features" class="nav-link scroll-link">Task Tracking</a></li>
+                        <li><a href="#features" class="nav-link scroll-link">Communication</a></li>
+                        <li><a href="#features" class="nav-link scroll-link">Time Tracking</a></li>
+                    </ul>
+                </div>
+
+                <!-- Column 2: Solutions Links -->
+                <div class="footer-section-with-line">
+                    <h4 class="footer-heading">Solutions</h4>
+                    <ul class="footer-link-list">
+                        <li><a href="#features" class="nav-link scroll-link">Project Management</a></li>
+                        <li><a href="#features" class="nav-link scroll-link">Client Collaboration</a></li>
+                        <li><a href="#features" class="nav-link scroll-link">Reporting & Analytics</a></li>
+                        <li><a href="#features" class="nav-link scroll-link">Automated Workflows</a></li>
+                    </ul>
+                </div>
+
+                <!-- Column 3: Resources Links -->
+                <div class="footer-section-with-line">
+                    <h4 class="footer-heading">Resources</h4>
+                    <ul class="footer-link-list">
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="casestudy.html">Case Studies</a></li>
+                        <li><a href="webinars.html">Webinars</a></li>
+                        <li><a href="support.html">Support Center</a></li>
+                    </ul>
+                </div>
+
+                <!-- Column 4: Company Links -->
+                <div class="footer-section-with-line">
+                    <h4 class="footer-heading">Company</h4>
+                    <ul class="footer-link-list">
+                        <li><a href="#about-us" class="nav-link scroll-link">About Us</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Partnerships</a></li>
+                        <li><a href="#contact" class="nav-link scroll-link">Contact Us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Column 5: Developers Links -->
+                <div class="footer-section-with-line">
+                    <h4 class="footer-heading">Developers</h4>
+                    <ul class="footer-link-list mb-6">
+                        <li><a href="#">API Documentation</a></li>
+                        <li><a href="#">Integrations</a></li>
+                        <li><a href="status.html">Status Page</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer Brand Section: Logo, Legal, and Copyright -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end footer-brand-section">
+                <!-- RemoteTeamPro Logo in Footer -->
+                <div class="footer-logo">RemoteTeamPro</div>
+
+                <div class="flex flex-col items-start md:items-end">
+                    <!-- Legal Links (Terms, Privacy, Security) -->
+                    <div class="footer-legal-links">
+                        <a href="#">Terms of Service</a>
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Security</a>
+                    </div>
+                    <!-- Copyright Information -->
+                    <div class="footer-copyright">
+                        <p>&copy; 2025 RemoteTeamPro. All rights reserved.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom Message Box HTML (Hidden by default, used for custom alerts) -->
+    <div id="messageBoxOverlay" class="message-box-overlay">
+        <div class="message-box-content">
+            <p id="messageBoxText" class="text-xl font-semibold"></p>
+            <button id="messageBoxCloseBtn">OK</button>
+        </div>
+    </div>
+
+    <!-- Tenor Embed Script: Required for displaying Tenor GIFs -->
+    <!-- Placed at the end of the body for optimal page loading performance -->
+    <script type="text/javascript" async src="https://tenor.com/embed.js"></script>
+
+    <!-- JavaScript for Interactive Functionality -->
+    <!-- Corrected path to index.js: Go up one directory (..) then into the js folder -->
+    <script src="../js/index.js"></script>
+    <script>
+        // Pre-select company in contact form if specified in URL
+        document.addEventListener("DOMContentLoaded", () => {
+            // Use window.location.href to correctly parse params and hash
+            const url = new URL(window.location.href);
+            const urlParams = url.searchParams;
+            const companyId = urlParams.get('company_id');
+            const companyName = urlParams.get('company_name');
+            const companyDropdown = document.getElementById("company-id");
+
+            if (companyId && companyName && companyDropdown) {
+                companyDropdown.innerHTML += `<option value="${companyId}" selected>${companyName}</option>`;
+            }
+        });
+    </script>
+    <script> window.chtlConfig = { chatbotId: "6679368154" } </script>
+<script async data-id="6679368154" id="chtl-script" type="text/javascript" src="https://chatling.ai/js/embed.js"></script>
+
+</body>
+</html>

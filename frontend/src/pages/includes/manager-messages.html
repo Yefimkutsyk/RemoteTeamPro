@@ -1,0 +1,155 @@
+<!-- messages.html -->
+<div class="h-full w-full flex bg-gray-950 text-gray-100 rounded-xl overflow-hidden shadow-2xl backdrop-blur-md bg-opacity-60">
+  <!-- LEFT PANEL: User list -->
+  <div class="w-1/3 border-r border-gray-800 flex flex-col bg-gray-900/60">
+    <div class="p-4 text-lg font-semibold border-b border-gray-800 bg-gray-900/80">
+      💬 Messages
+    </div>
+    <div id="userList" class="flex-1 overflow-y-auto p-2 space-y-2"></div>
+  </div>
+
+  <!-- RIGHT PANEL: Chat -->
+  <div class="w-2/3 flex flex-col bg-gray-900/40">
+    <div id="chatHeader" class="p-4 border-b border-gray-800 text-lg font-semibold">
+      Select a chat
+    </div>
+
+    <div id="chatBox" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-950/50"></div>
+
+    <div class="p-3 border-t border-gray-800 flex items-center bg-gray-900/60">
+      <input id="msgInput" type="text" placeholder="Type your message..."
+        class="flex-1 bg-gray-800 text-gray-100 px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-purple-500" />
+      <button id="sendBtn"
+        class="ml-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition">
+        Send
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(async () => {
+  const API_BASE = '/RemoteTeamPro/backend/api/messages';
+  const userListEl = document.getElementById('userList');
+  const chatBox = document.getElementById('chatBox');
+  const sendBtn = document.getElementById('sendBtn');
+  const msgInput = document.getElementById('msgInput');
+  const chatHeader = document.getElementById('chatHeader');
+  let selectedConversation = null;
+  let sessionUser = null;
+
+  const fetchJSON = async (url, opt = {}) => {
+    try {
+      const res = await fetch(url, opt);
+      return await res.json();
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  };
+
+  // 🔹 Get current user session
+  async function getSession() {
+    const res = await fetch('/RemoteTeamPro/backend/api/session_debug.php', { credentials: 'include' });
+    const data = await res.json();
+    sessionUser = data.session || {};
+    sessionStorage.user_id = data.user_id;
+    return data;
+  }
+
+  // 🔹 Load conversations (other users)
+  async function loadUsers() {
+    const users = await fetchJSON(`${API_BASE}/fetch_conversations.php`);
+    if (!Array.isArray(users)) {
+      userListEl.innerHTML = `<div class="text-gray-500 p-4 text-center">No users found</div>`;
+      return;
+    }
+
+    userListEl.innerHTML = users.map(u => `
+      <div class="p-3 rounded-lg bg-gray-800/60 hover:bg-purple-700/60 cursor-pointer transition"
+        data-conversation-id="${u.conversation_id}" data-name="${u.name}" data-role="${u.role}">
+        <div class="font-semibold">${u.name || 'Unnamed Chat'}</div>
+        <div class="text-xs text-gray-400">${u.role || ''}</div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('#userList div[data-conversation-id]').forEach(el => {
+      el.onclick = async () => {
+        selectedConversation = el.dataset.conversationId;
+        chatHeader.innerText = `${el.dataset.name} (${el.dataset.role})`;
+        await renderMessages();
+      };
+    });
+  }
+
+  // 🔹 Fetch & render messages
+  async function renderMessages() {
+    if (!selectedConversation) return;
+    const res = await fetchJSON(`${API_BASE}/fetch_messages.php?conversation_id=${selectedConversation}`);
+    const msgs = res.messages || [];
+
+    chatBox.innerHTML = msgs.length ? msgs.map(m => `
+      <div class="flex ${m.is_own ? 'justify-end' : 'justify-start'}">
+        <div class="p-2 px-4 max-w-[70%] rounded-2xl text-sm ${
+          m.is_own
+          ? 'bg-purple-600 text-white rounded-br-none'
+          : 'bg-gray-700 text-gray-100 rounded-bl-none'
+        }">
+          <div class="text-xs opacity-70 mb-1">${m.sender_name}</div>
+          ${m.message_content}
+        </div>
+      </div>
+    `).join('') : `<div class="text-center text-gray-500 py-10">No messages yet</div>`;
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  // 🔹 Send message
+  async function sendMessage() {
+    const message = msgInput.value.trim();
+    if (!message) return alert('Type a message first');
+    if (!selectedConversation) return alert('Select a chat first');
+
+    const res = await fetchJSON(`${API_BASE}/send_message.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversation_id: selectedConversation, message })
+    });
+
+    if (res.success) {
+      msgInput.value = '';
+      await renderMessages();
+    } else {
+      alert(res.error || 'Failed to send message');
+    }
+  }
+
+  // 🔹 Auto-refresh messages every 3 seconds
+  setInterval(() => {
+    if (selectedConversation) renderMessages();
+  }, 3000);
+
+  // 🔹 Initialize
+  await getSession();
+  await loadUsers();
+  sendBtn.onclick = sendMessage;
+})();
+</script>
+
+<style>
+/* Scrollbar & layout polish */
+#chatBox::-webkit-scrollbar,
+#userList::-webkit-scrollbar {
+  width: 6px;
+}
+
+#chatBox::-webkit-scrollbar-thumb,
+#userList::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+#userList div[data-conversation-id].active {
+  background-color: rgba(168, 85, 247, 0.3);
+}
+</style>

@@ -1,0 +1,188 @@
+<!-- reports-admin.html -->
+<div class="p-6">
+  <div class="bg-[#0f172a]/90 rounded-xl p-6 shadow-lg">
+    <h1 class="text-2xl font-bold text-white mb-1">Project Reports — Admin</h1>
+    <p class="text-sm text-gray-300 mb-4">Monitor reports for all projects within your company.</p>
+
+    <div id="rtp-msg-admin" class="mb-4"></div>
+
+    <div class="flex gap-3 items-center mb-6">
+      <select id="projectSelectAdmin" class="flex-1 p-3 rounded bg-[#1e293b] text-white border border-white/10 focus:ring-2 focus:ring-blue-500">
+        <option value="">Select a project...</option>
+      </select>
+      <button id="downloadAdmin" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white">Download PDF</button>
+    </div>
+
+    <div id="reportViewAdmin" class="hidden transition-all duration-300">
+      <h2 id="adminTitle" class="text-xl font-semibold text-white mb-1"></h2>
+      <div id="adminMeta" class="text-sm text-gray-300 mb-4"></div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Chart card -->
+        <div class="bg-[#1e293b]/70 rounded-lg p-4">
+          <h3 class="font-medium mb-3 text-white">Task Status Overview</h3>
+          <div class="h-[260px] flex items-center justify-center">
+            <canvas id="adminChartStatus" width="300" height="260"></canvas>
+          </div>
+        </div>
+
+        <!-- Timesheet table -->
+        <div class="bg-[#1e293b]/70 rounded-lg p-4">
+          <h3 class="font-medium mb-3 text-white">Timesheet Summary</h3>
+          <table id="adminTsTable" class="min-w-full text-sm text-white">
+            <thead class="text-left text-gray-300 border-b border-white/10">
+              <tr>
+                <th class="p-2">Member</th>
+                <th class="p-2 text-right">Hours</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(async () => {
+  const API_BASE = '/RemoteTeamPro/backend/api/reports';
+  const el = id => document.getElementById(id);
+  const showMsg = (m, ok = true) => {
+    el('rtp-msg-admin').innerHTML =
+      `<div style="padding:8px;border-radius:8px;background:${ok ? '#052e14' : '#3b0a0a'};color:${ok ? '#b6f0c8' : '#ffd6d6'}">${m}</div>`;
+    setTimeout(() => (el('rtp-msg-admin').innerHTML = ''), 4500);
+  };
+
+  let chartStatus = null;
+
+  // Load project list
+  const listProjects = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/generate-report.php?action=list_projects`, { credentials: 'include' });
+      const j = await res.json();
+      if (!j.success) return showMsg(j.message || 'No projects found', false);
+
+      const sel = el('projectSelectAdmin');
+      sel.innerHTML =
+        '<option value="">Select a project...</option>' +
+        j.projects.map(p => `<option value="${p.project_id}">${p.project_name}</option>`).join('');
+
+      if (j.projects.length) {
+        sel.value = j.projects[0].project_id;
+        await loadReport(j.projects[0].project_id);
+      }
+
+      sel.onchange = async () => {
+        const pid = sel.value;
+        if (pid) await loadReport(pid);
+      };
+    } catch (e) {
+      console.error(e);
+      showMsg('Error loading projects', false);
+    }
+  };
+
+  // Load report for a project
+  const loadReport = async pid => {
+    try {
+      const res = await fetch(`${API_BASE}/generate-report.php?project_id=${pid}`, { credentials: 'include' });
+      const j = await res.json();
+      if (!j.success) return showMsg(j.message || 'Failed to load', false);
+
+      el('reportViewAdmin').classList.remove('hidden');
+      el('adminTitle').innerText = j.project.project_name;
+      el('adminMeta').innerText = `Client: ${j.project.client_name || '-'} • Completion: ${parseFloat(
+        j.project.completion_percentage || 0
+      ).toFixed(2)}%`;
+
+      // Chart rendering (safe + fixed height)
+      const statusData = j.metrics.task_status || {};
+      if (chartStatus && typeof chartStatus.destroy === 'function') chartStatus.destroy();
+
+      const ctx = el('adminChartStatus').getContext('2d');
+      chartStatus = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(statusData),
+          datasets: [
+            {
+              data: Object.values(statusData),
+              backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+              borderColor: '#0f172a',
+              borderWidth: 2,
+            },
+          ],
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0' } } },
+        },
+      });
+
+      // Timesheet table
+      const tbody = el('adminTsTable').querySelector('tbody');
+      const ts = j.metrics.timesheets_by_user || [];
+      tbody.innerHTML = ts
+        .map(
+          r =>
+            `<tr class="border-b border-white/10"><td class="p-2">${r.name}</td><td class="p-2 text-right">${parseFloat(
+              r.hours || 0
+            ).toFixed(2)}</td></tr>`
+        )
+        .join('');
+
+      showMsg('Report loaded');
+    } catch (e) {
+      console.error(e);
+      showMsg('Error loading report', false);
+    }
+  };
+
+  // Download PDF
+  el('downloadAdmin').onclick = async () => {
+    const pid = el('projectSelectAdmin').value;
+    if (!pid) return showMsg('Select a project', false);
+
+    const charts = [];
+    if (chartStatus) charts.push(el('adminChartStatus').toDataURL('image/png'));
+
+    try {
+      const res = await fetch(`${API_BASE}/export-pdf.php?project_id=${pid}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ charts }),
+      });
+      const j = await res.json();
+      if (!j.success) return showMsg(j.message || 'PDF error', false);
+
+      const bytes = Uint8Array.from(atob(j.pdf_base64), c => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `project_report_${pid}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      showMsg('PDF downloaded');
+    } catch (e) {
+      console.error(e);
+      showMsg('Download error', false);
+    }
+  };
+
+  await listProjects();
+})();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  logActivity('VIEW_REPORT', 'Viewed Reports tab');
+});
+</script>

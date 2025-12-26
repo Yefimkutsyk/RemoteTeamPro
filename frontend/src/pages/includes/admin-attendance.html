@@ -1,0 +1,138 @@
+<!-- frontend/src/pages/includes/admin-attendance.html -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="p-6 text-white font-[Manrope] min-h-screen bg-gray-950">
+  <div class="glass-card rounded-2xl p-6 shadow-xl">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-violet-300">Company Attendance Overview</h2>
+      <div id="todayLabel" class="text-sm text-gray-400"></div>
+    </div>
+
+    <div class="bg-gray-900/40 p-4 rounded-xl mb-8">
+      <canvas id="adminBar" height="120"></canvas>
+    </div>
+
+    <div>
+      <h4 class="text-gray-300 mb-2 text-lg font-semibold">Recent Attendance Records</h4>
+      <div class="overflow-x-auto rounded-xl border border-gray-800">
+        <table class="w-full text-left text-sm">
+          <thead class="text-indigo-300 border-b border-gray-700 bg-gray-900/60">
+            <tr>
+              <th class="p-2">Name</th>
+              <th class="p-2">Role</th>
+              <th class="p-2">Date</th>
+              <th class="p-2">Status</th>
+              <th class="p-2">Hours</th>
+              <th class="p-2">Notes</th>
+            </tr>
+          </thead>
+          <tbody id="adminTable" class="divide-y divide-gray-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(async () => {
+  const API = '/RemoteTeamPro/backend/api/attendance/attendance-admin.php';
+  const todayLabel = document.getElementById('todayLabel');
+  const ctx = document.getElementById('adminBar').getContext('2d');
+  let adminChart;
+
+  todayLabel.textContent = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric'
+  });
+
+  async function fetchAll() {
+    try {
+      const res = await fetch(API + '?days=30');
+      if (!res.ok) throw new Error('Network error');
+      const json = await res.json();
+      if (!Array.isArray(json)) throw new Error('Invalid JSON response');
+      return json;
+    } catch (err) {
+      console.error('Fetch failed:', err);
+      return [];
+    }
+  }
+
+  function renderTable(rows) {
+    const tbody = document.getElementById('adminTable');
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400 p-4">No records found.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(r => `
+      <tr class="hover:bg-gray-800/40 transition">
+        <td class="p-2">${r.full_name || '-'}</td>
+        <td class="p-2">${r.role || '-'}</td>
+        <td class="p-2">${r.attendance_date || '-'}</td>
+        <td class="p-2 ${r.status === 'Present' ? 'text-green-400' : r.status === 'Leave' ? 'text-amber-400' : 'text-red-400'}">${r.status || '-'}</td>
+        <td class="p-2">${r.hours_worked ?? '-'}</td>
+        <td class="p-2">${r.notes ? r.notes.replace(/\n/g,'<br>') : '-'}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderBar(rows) {
+    if (!rows.length) return;
+    const counts = {};
+    rows.forEach(r => {
+      const d = r.attendance_date;
+      if (!d) return;
+      counts[d] = counts[d] || { Present: 0, Absent: 0, Leave: 0 };
+      counts[d][r.status] = (counts[d][r.status] || 0) + 1;
+    });
+
+    const dates = Object.keys(counts).sort();
+    const present = dates.map(d => counts[d].Present);
+    const absent = dates.map(d => counts[d].Absent);
+    const leave = dates.map(d => counts[d].Leave);
+
+    if (adminChart) adminChart.destroy();
+    adminChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: dates,
+        datasets: [
+          { label: 'Present', data: present, backgroundColor: '#10b981' },
+          { label: 'Absent', data: absent, backgroundColor: '#ef4444' },
+          { label: 'Leave', data: leave, backgroundColor: '#f59e0b' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { color: '#cbd5e1' }, grid: { color: '#1f2937' } },
+          y: { ticks: { color: '#cbd5e1' }, grid: { color: '#1f2937' } }
+        },
+        plugins: {
+          legend: { labels: { color: '#cbd5e1' } },
+          title: { display: false }
+        }
+      }
+    });
+  }
+
+  async function load() {
+    const rows = await fetchAll();
+    renderTable(rows);
+    renderBar(rows);
+  }
+
+  await load();
+})();
+</script>
+
+<style>
+.glass-card {
+  background: rgba(5, 8, 15, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+}
+</style>

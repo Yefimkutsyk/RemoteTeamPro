@@ -1,0 +1,417 @@
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RemoteTeamPro - Login</title>
+    <!-- Tailwind CSS CDN -->
+    <link rel="icon" type="image/png" href="../assets/images/index/favicon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Manrope font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Loading spinner styles */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .button-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* Base styles for Manrope font and dark, ethereal background */
+        body {
+            font-family: 'Manrope', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            /* Background Gradient: Creating a sophisticated, ethereal background with radial gradients for visual depth. */
+            background: radial-gradient(
+                circle at 30% 40%,
+                rgba(100, 0, 180, 0.3),
+                transparent 35%
+            ),
+            radial-gradient(
+                circle at 60% 60%,
+                rgba(150, 0, 200, 0.3),
+                transparent 35%
+            ),
+            radial-gradient(
+                circle at 70% 30%,
+                rgba(50, 0, 180, 0.25),
+                transparent 35%
+            ),
+            #0a0a0a; /* Base Dark Tone: A very dark gray, serving as the background fallback */
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            color: #e2e8f0; /* Light text color for overall body */
+        }
+        /* Main container with glassmorphism effect */
+        .app-container-glass {
+            background: rgba(0, 0, 0, 0.2); /* Slightly transparent dark background */
+            border-radius: 1.25rem; /* Slightly rounded corners for a soft look */
+            padding: 40px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6), 0 0 40px rgba(127, 56, 223, 0.15); /* Deep shadow with purple glow */
+            border: 1px solid rgba(255, 255, 255, 0.12); /* Subtle light border for definition */
+            backdrop-filter: blur(12px); /* Adds a strong blur effect */
+            -webkit-backdrop-filter: blur(12px); /* Vendor prefix for Safari */
+            max-width: 500px; /* Adjusted max-width for login form */
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            color: #e2e8f0; /* Ensure text inside is light */
+            transform-origin: center; /* Ensure scaling is from the center */
+        }
+
+        /* Form Input Styling */
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.15); /* Lighter, transparent border */
+            border-radius: 10px;
+            font-size: 1.05rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background-color: rgba(26, 32, 44, 0.6); /* Transparent dark background for inputs */
+            color: #e2e8f0; /* Light text color for input */
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #8B5CF6; /* Purple focus border */
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.25); /* Purple focus ring */
+        }
+        .form-input::placeholder {
+            color: #a0aec0; /* Gray placeholder text */
+        }
+
+        /* CTA Button Styling */
+        .cta-button {
+            background-color: #8B5CF6; /* Vibrant Purple */
+            color: white;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            display: inline-block;
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3); /* Subtle purple glow shadow */
+        }
+        .cta-button:hover {
+            background-color: #7C3AED; /* Darker purple on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.5), 0 0 25px rgba(139, 92, 246, 0.3);
+        }
+        .cta-button:disabled {
+            background-color: #404A5D; /* Darker gray for disabled state */
+            color: #9ca3af; /* Lighter gray text for disabled */
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 768px) {
+            .app-container-glass {
+                padding: 60px;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="app-container-glass transform transition-all hover:scale-[1.01] duration-300 ease-in-out">
+        <div class="text-center mb-8">
+            <h2 class="text-4xl font-extrabold text-white mb-2">Welcome Back!</h2>
+            <p class="text-lg text-gray-400">Sign in to manage your remote team efficiently.</p>
+        </div>
+
+        <form id="loginForm" class="space-y-6">
+            <div>
+                <label for="email" class="block text-sm font-semibold text-gray-300 mb-2">Email Address</label>
+                  <input type="email" id="email" name="email" required
+                      class="form-input" placeholder="examplemail@mail.com">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-semibold text-gray-300 mb-2">Password</label>
+                <input type="password" id="password" name="password" required
+                       class="form-input" placeholder="••••••••••••">
+                <div class="mt-2 text-right">
+                    <a href="forgot_password.html" class="text-sm text-purple-400 hover:text-purple-300 transition-colors duration-150 ease-in-out">Forgot Password?</a>
+                </div>
+            </div>
+
+            <!-- OTP Section (Initially Hidden) -->
+            <div id="otpSection" class="hidden space-y-4">
+                <div>
+                    <label for="otp" class="block text-sm font-semibold text-gray-300 mb-2">Enter OTP</label>
+                    <input type="text" id="otp" name="otp" maxlength="6"
+                           class="form-input" placeholder="Enter 6-digit OTP">
+                </div>
+                <p id="otpMessage" class="text-sm text-gray-400">
+                    An OTP has been sent to your email. It will expire in 5 minutes.
+                </p>
+                <button type="button" id="resendOtp"
+                        class="text-sm text-purple-400 hover:text-purple-300 hidden">
+                    Resend OTP
+                </button>
+            </div>
+
+            <div id="message" class="text-center text-sm font-medium pt-2 text-white">
+                <!-- Messages (success/error) will be displayed here -->
+            </div>
+
+            <div>
+                <button type="submit" id="submitButton"
+                        class="w-full cta-button text-lg font-semibold">
+                    <span class="button-content">
+                        <span id="buttonText">Send OTP</span>
+                        <span id="buttonSpinner" class="spinner hidden"></span>
+                    </span>
+                </button>
+            </div>
+        </form>
+
+        <p class="mt-8 text-center text-base text-gray-400">
+            Don't have an account?
+            <a href="register.html" class="font-bold text-purple-400 hover:text-purple-300 transition duration-150 ease-in-out">Register here</a>
+        </p>
+    </div>
+
+    <script>
+        let resendTimer;
+        let isSubmitting = false;
+        let verificationEmail = '';
+
+        function startResendTimer() {
+            // Make resend button available immediately
+            const resendButton = document.getElementById('resendOtp');
+            resendButton.classList.remove('hidden');
+        }
+
+        function showOtpSection() {
+            document.getElementById('otpSection').classList.remove('hidden');
+            document.getElementById('buttonText').textContent = 'Verify OTP';
+            document.getElementById('email').readOnly = true;
+            document.getElementById('password').readOnly = true;
+            startResendTimer();
+            setLoading(false);
+            isSubmitting = false;
+        }
+
+        async function handleLoginSubmit(email, password) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            try {
+                const response = await fetch('/RemoteTeamPro/backend/api/auth/login.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ email, password }),
+                    signal: controller.signal
+                });
+
+                const text = await response.text();
+                let data;
+                try { data = JSON.parse(text); } catch (_) { data = {}; }
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to send OTP');
+                }
+
+                return data;
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    throw new Error('Request timed out. Please try again.');
+                }
+                throw err;
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
+        async function handleOtpVerification(otp) {
+            try {
+                const response = await fetch('/RemoteTeamPro/backend/api/auth/verify-login-otp.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ otp })
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to verify OTP');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('OTP verification error:', error);
+                throw error;
+            }
+        }
+
+        function setLoading(isLoading) {
+            const submitButton = document.getElementById('submitButton');
+            const buttonText = document.getElementById('buttonText');
+            const buttonSpinner = document.getElementById('buttonSpinner');
+            const otpSectionEl = document.getElementById('otpSection');
+
+            const isOtpHidden = otpSectionEl ? otpSectionEl.classList.contains('hidden') : true;
+
+            if (isLoading) {
+                submitButton.disabled = true;
+                buttonText.textContent = isOtpHidden ? 'Sending OTP...' : 'Verifying...';
+                buttonSpinner.classList.remove('hidden');
+            } else {
+                submitButton.disabled = false;
+                buttonText.textContent = isOtpHidden ? 'Send OTP' : 'Verify OTP';
+                buttonSpinner.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            // Prevent multiple submissions
+            if (isSubmitting) return;
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const otp = document.getElementById('otp').value;
+            const messageDiv = document.getElementById('message');
+            const otpSection = document.getElementById('otpSection');
+
+            messageDiv.textContent = '';
+            messageDiv.classList.remove('text-green-400', 'text-red-500');
+
+            try {
+                isSubmitting = true;
+
+                if (otpSection.classList.contains('hidden')) {
+                    // First step: Email and Password verification
+                    setLoading(true); // Set loading state only for OTP sending
+                    const result = await handleLoginSubmit(email, password);
+
+                    if (result.success && result.requires_otp) {
+                        verificationEmail = email;
+                        showOtpSection();
+                        messageDiv.textContent = 'OTP has been sent to your email.';
+                        messageDiv.classList.add('text-green-400');
+                        document.getElementById('otp').focus(); // Focus the OTP input
+                    } else {
+                        setLoading(false); // Reset loading state if login fails
+                        messageDiv.textContent = result.message || 'Login failed';
+                        messageDiv.classList.add('text-red-500');
+                    }
+                } else {
+                    // Second step: OTP verification
+                    const result = await handleOtpVerification(otp);
+
+                    if (result.success) {
+                        messageDiv.textContent = 'Login successful!';
+                        messageDiv.classList.add('text-green-400');
+
+                        // Keep the loading state for redirect
+                        setTimeout(() => {
+                            const redirectUrls = {
+                                'Admin': 'admin_dashboard.html',
+                                'Manager': 'manager_dashboard.html',
+                                'Employee': 'employee_dashboard.html',
+                                'Client': 'client_dashboard.html'
+                            };
+                            const redirectUrl = redirectUrls[result.user.role] || 'login.html';
+                            window.location.href = redirectUrl;
+                        }, 1000);
+                    } else {
+                        messageDiv.textContent = result.message || 'Invalid OTP';
+                        messageDiv.classList.add('text-red-500');
+                        setLoading(false);
+                    }
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                messageDiv.textContent = error.message || 'An unexpected error occurred. Please try again.';
+                messageDiv.classList.add('text-red-500');
+                messageDiv.classList.remove('text-green-400');
+                setLoading(false);
+            } finally {
+                if (!messageDiv.textContent.includes('successful')) {
+                    isSubmitting = false;
+                }
+            }
+        });
+
+        // Handle resend OTP
+        document.getElementById('resendOtp').addEventListener('click', async function() {
+            const messageDiv = document.getElementById('message');
+            const resendBtn = document.getElementById('resendOtp');
+
+            // Determine email to use
+            const emailToUse = verificationEmail || document.getElementById('email').value;
+            const passwordToUse = document.getElementById('password').value;
+
+            // Guard
+            if (!emailToUse || !passwordToUse) {
+                messageDiv.classList.remove('text-green-400');
+                messageDiv.classList.add('text-red-500');
+                messageDiv.textContent = 'Enter email and password to resend OTP.';
+                return;
+            }
+
+            // Loading state on resend button
+            const originalText = resendBtn.textContent;
+            resendBtn.textContent = 'Sending...';
+            resendBtn.disabled = true;
+
+            try {
+                const result = await handleLoginSubmit(emailToUse, passwordToUse);
+
+                messageDiv.classList.remove('text-green-400', 'text-red-500');
+                if (result.success && result.requires_otp) {
+                    startResendTimer();
+                    messageDiv.classList.add('text-green-400');
+                    messageDiv.textContent = 'New OTP has been sent to your email.';
+                } else {
+                    messageDiv.classList.add('text-red-500');
+                    messageDiv.textContent = result.message || 'Failed to resend OTP';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                messageDiv.classList.remove('text-green-400');
+                messageDiv.classList.add('text-red-500');
+                messageDiv.textContent = error.message || 'Failed to resend OTP. Please try again.';
+            } finally {
+                resendBtn.textContent = originalText;
+                resendBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

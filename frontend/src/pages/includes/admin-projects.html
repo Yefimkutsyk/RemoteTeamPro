@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projects Dashboard | RemoteTeamPro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+
+    <style>
+    body { background: radial-gradient(circle at top left, #1a1525, #0f0f14); color: #e5e7eb; font-family: 'Inter', sans-serif; }
+    .glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(14px); border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.35); position: relative; z-index:1; transition: all .14s; }
+    .glass:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); }
+    .card-title { color: #c084fc; font-weight: 600; }
+    .badge { padding: 4px 8px; border-radius: 999px; font-size: 12px; text-transform: capitalize; }
+    select, input, textarea { background: rgba(255,255,255,0.06); color: #f8fafc; border: 1px solid rgba(255,255,255,0.12); transition: all .12s; }
+    select:focus, input:focus, textarea:focus { outline: none; border-color: #a78bfa; box-shadow: 0 0 0 4px rgba(167,139,250,0.06); }
+    option { background:#18121f; color:#e5e7eb; }
+    /* Styles for the Notification Dropdown (Now Functional) */
+    #notifDropdown { min-width:320px; max-width:420px; background: rgba(18,14,28,0.98); border:1px solid rgba(255,255,255,0.10); box-shadow: 0 16px 40px rgba(0,0,0,0.6); border-radius:10px; padding:12px; display:none; position:absolute; right: 0; top: 48px; z-index:99999; }
+    #notifDropdown.open { display:block; }
+    #notifList > div { background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); padding:8px; border-radius:8px; }
+    #notifList > div:hover { background: rgba(255,255,255,0.06); }
+    /* Other Styles */
+    tr:hover { background-color: rgba(255,255,255,0.03); }
+    .convertBtn { transition: all .12s; }
+    .convertBtn:hover { transform: translateY(-2px); }
+
+    /* New Style for In-App Notification Banner */
+    #appNotification {
+        position: fixed;
+        top: -100px; /* Start off-screen */
+        left: 50%;
+        transform: translateX(-50%);
+        transition: top 0.5s ease-out;
+        z-index: 10000;
+    }
+    #appNotification.show {
+        top: 20px; /* Slide into view */
+    }
+    .hidden { display:none; }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+    <div id="appNotification" class="p-4 rounded-lg text-white shadow-xl max-w-sm hidden" role="alert" aria-live="polite">
+        <div class="flex items-center space-x-2">
+            <i id="notifIcon" class="fa-solid"></i>
+            <span id="notifMessage" class="font-medium"></span>
+        </div>
+    </div>
+
+    <header class="mb-6 flex items-start justify-between">
+        <div>
+            <h1 class="text-3xl font-semibold text-violet-400 mb-1">Projects Dashboard</h1>
+            <p class="text-gray-400 text-sm">Admin analytics, manager load & approved request → project conversion</p>
+        </div>
+
+        
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="glass p-5">
+      <p class="text-gray-400 text-sm">Total Projects</p>
+      <h2 id="totalProjects" class="text-3xl font-bold text-violet-400 mt-2">0</h2>
+    </div>
+    <div class="glass p-5">
+      <p class="text-gray-400 text-sm">Active Managers</p>
+      <h2 id="totalManagers" class="text-3xl font-bold text-blue-400 mt-2">0</h2>
+    </div>
+    <div class="glass p-5">
+      <p class="text-gray-400 text-sm">Total Budget</p>
+      <h2 id="totalBudget" class="text-3xl font-bold text-cyan-400 mt-2">₹0</h2>
+    </div>
+    <div class="glass p-5">
+      <p class="text-gray-400 text-sm">Avg Completion</p>
+      <h2 id="avgCompletion" class="text-3xl font-bold text-emerald-400 mt-2">0%</h2>
+    </div>
+    </section>
+
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass p-4">
+            <p class="card-title mb-2">Projects per Manager</p>
+            <div class="h-40">
+                <canvas id="managerChart"></canvas>
+            </div>
+        </div>
+        <div class="glass p-4">
+            <p class="card-title mb-2">Status Distribution</p>
+            <div class="h-40">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+        <div class="glass p-4">
+            <p class="card-title mb-2">Budget Trend</p>
+            <div class="h-40">
+                <canvas id="budgetChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <section class="glass p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="card-title">All Projects</h2>
+            <div class="flex gap-2">
+                <input id="searchInput" class="p-2 rounded text-sm" placeholder="Search project or client..."/>
+                <select id="sortSelect" class="p-2 rounded text-sm">
+                    <option value="date">Sort: Newest</option>
+                    <option value="budget">Sort: Budget</option>
+                    <option value="status">Sort: Status</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="text-gray-400 uppercase tracking-wide border-b border-gray-700">
+                    <tr>
+                        <th class="text-left py-2">Project</th>
+                        <th class="text-left py-2">Manager</th>
+                        <th class="text-left py-2">Client</th>
+                        <th class="text-left py-2">Budget</th>
+                        <th class="text-left py-2">Status</th>
+                        <th class="text-left py-2">Completion</th>
+                    </tr>
+                </thead>
+                <tbody id="projectsTable"></tbody>
+            </table>
+        </div>
+    </section>
+    </div>
+
+    <aside class="space-y-6">
+        <div id="readyListBlock" class="glass p-5">
+            <h3 class="card-title mb-3">Approved Requests (Convert)</h3>
+            <div id="readyList" class="space-y-3 max-h-60 overflow-auto text-sm"></div>
+            <div class="mt-3 text-right">
+                <button id="refreshReady" class="px-3 py-1 bg-gray-700 rounded text-sm">Refresh</button>
+            </div>
+        </div>
+
+        <div id="convertProjectBlock" class="glass p-5 hidden">
+            <h3 class="card-title mb-3">Convert Request: <span id="conversionProjectNameTitle" class="text-white"></span></h3>
+            <form id="convertProjectForm" class="space-y-3">
+                <input type="hidden" name="client_request_id" id="conversionRequestId">
+                <input type="hidden" name="client_id" id="conversionClientId">
+
+                <input class="w-full p-2 rounded" type="text" name="project_name" id="conversionProjectNameInput" placeholder="Project Name" required>
+                <textarea class="w-full p-2 rounded" name="description" id="conversionDescription" placeholder="Description"></textarea>
+                <input class="w-full p-2 rounded" type="number" name="budget_allocated" id="conversionBudget" placeholder="Budget (₹)">
+                <input class="w-full p-2 rounded" type="date" name="deadline" id="conversionDeadline">
+
+                <div class="flex gap-2">
+                    <select id="conversionManagerSelect" name="manager_id" class="flex-1 p-2 rounded truncate min-w-0">
+                        <option value="">Assign Manager (optional)</option>
+                    </select>
+                    <input id="conversionClientDisplay" class="flex-1 p-2 rounded text-gray-400" disabled value="Client: N/A"/>
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 transition text-white font-semibold py-2 rounded">Finalize Conversion</button>
+                <button type="button" id="cancelConversionBtn" class="w-full bg-gray-500 hover:bg-gray-600 transition text-white font-semibold py-2 rounded mt-2">Cancel</button>
+            </form>
+        </div>
+
+        <div id="createProjectBlock" class="glass p-5">
+            <h3 class="card-title mb-3">Create New Project</h3>
+            <form id="createProjectForm" class="space-y-3">
+                <input class="w-full p-2 rounded" type="text" name="project_name" placeholder="Project Name" required>
+                <textarea class="w-full p-2 rounded" name="description" placeholder="Description"></textarea>
+                <input class="w-full p-2 rounded" type="number" name="budget_allocated" placeholder="Budget (₹)">
+                <input class="w-full p-2 rounded" type="date" name="deadline">
+                <div class="flex gap-2">
+                    <select id="managerSelect" name="manager_id" class="flex-1 p-2 rounded truncate min-w-0">
+                        <option value="">Assign Manager (optional)</option>
+                    </select>
+                    <select id="clientSelect" name="client_id" class="flex-1 p-2 rounded truncate min-w-0">
+                        <option value="">Client (optional)</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-violet-600 hover:bg-violet-700 transition text-white font-semibold py-2 rounded">Create Project</button>
+            </form>
+        </div>
+    </aside>
+    </main>
+
+    <div id="notifDropdown" aria-hidden="true">
+        <h4 class="font-semibold">Notifications</h4>
+        <div id="notifList" class="max-h-52 overflow-auto space-y-2"></div>
+        <div class="mt-3 text-right"><button id="markAllRead" class="text-sm text-gray-300 underline">Mark all read</button></div>
+    </div>
+
+<script>
+/*
+  IIFE pattern — encapsulates all JS so it does not leak into global scope.
+  This makes the page safe to inject repeatedly (dynamic tab loading).
+*/
+(async () => {
+    // local scoped variables only
+    const API_URL = "http://localhost/RemoteTeamPro/backend/api/admin-projects.php";
+
+    // Charts (local vars)
+    let mgrChart = null;
+    let statusChart = null;
+    let budgetChart = null;
+
+    // local caches
+    let projectsCache = [];
+    let managerOptionsHtml = `<option value="">Assign Manager (optional)</option>`;
+    let clientOptionsHtml = `<option value="">Client (optional)</option>`;
+    let notificationTimeout = null;
+
+    // small helpers
+    const $ = id => document.getElementById(id);
+    const safeAddListener = (el, evt, fn) => { if (el) el.addEventListener(evt, fn); };
+    const escapeHtml = (s='') => String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+
+    // API wrapper (local)
+    async function api(action, opts = {}) {
+        const method = opts.method || 'GET';
+        let url = `${API_URL}?action=${action}`;
+        try {
+            const res = await fetch(url, { 
+                method, 
+                headers: (method !== 'GET' ? {"Content-Type":"application/json"} : {}),
+                body: (method !== 'GET' ? JSON.stringify(opts.body || {}) : undefined)
+            });
+            if (!res.ok) {
+                try {
+                    const err = await res.json();
+                    return { success: false, error: err.error || `Server ${res.status}` };
+                } catch (e) {
+                    return { success: false, error: `Server responded ${res.status}` };
+                }
+            }
+            const text = await res.text();
+            if (!text) return action.startsWith('list') ? [] : { success: true, message: 'No content' };
+            return JSON.parse(text);
+        } catch (e) {
+            console.error('API error', e);
+            return action.startsWith('list') ? [] : { success: false, error: e.message || 'Network error' };
+        }
+    }
+
+    // In-app notification (local)
+    function showAppNotification(message, isSuccess = true) {
+        const notif = $('appNotification');
+        const icon = $('notifIcon');
+        const messageEl = $('notifMessage');
+        if (!notif) return;
+        clearTimeout(notificationTimeout);
+        notif.classList.remove('show');
+        notif.classList.add('hidden');
+
+        messageEl.textContent = message;
+
+        if (isSuccess) {
+            notif.className = 'p-4 rounded-lg text-white shadow-xl max-w-sm fixed bg-green-600';
+            icon.className = 'fa-solid fa-check-circle';
+        } else {
+            notif.className = 'p-4 rounded-lg text-white shadow-xl max-w-sm fixed bg-red-600';
+            icon.className = 'fa-solid fa-xmark-circle';
+        }
+
+        // slight delay to allow class changes to take effect
+        setTimeout(() => {
+            notif.classList.remove('hidden');
+            notif.classList.add('show');
+        }, 10);
+
+        notificationTimeout = setTimeout(() => {
+            notif.classList.remove('show');
+            setTimeout(() => notif.classList.add('hidden'), 500);
+        }, 4000);
+    }
+
+    // Populate manager/client selects
+    async function populateSelects() {
+        const managers = await api('list-managers');
+        managerOptionsHtml = `<option value="">Assign Manager (optional)</option>` + (Array.isArray(managers) ? managers.map(m=>`<option value="${m.user_id}">${escapeHtml(m.name)}</option>`).join('') : '');
+        const mSel = $('managerSelect'); const convMSel = $('conversionManagerSelect');
+        if (mSel) mSel.innerHTML = managerOptionsHtml;
+        if (convMSel) convMSel.innerHTML = managerOptionsHtml;
+
+        const clients = await api('list-clients');
+        clientOptionsHtml = `<option value="">Client (optional)</option>` + (Array.isArray(clients) ? clients.map(c=>`<option value="${c.user_id}">${escapeHtml(c.name)}</option>`).join('') : '');
+        const cSel = $('clientSelect');
+        if (cSel) cSel.innerHTML = clientOptionsHtml;
+    }
+
+    // Conversion form open/cancel
+    function openConversionForm(request) {
+        const createBlock = $('createProjectBlock');
+        const readyBlock = $('readyListBlock');
+        const convBlock = $('convertProjectBlock');
+        if (createBlock) createBlock.classList.add('hidden');
+        if (readyBlock) readyBlock.classList.add('hidden');
+        if (!convBlock) return;
+        convBlock.classList.remove('hidden');
+
+        $('conversionProjectNameTitle') && ( $('conversionProjectNameTitle').textContent = request.project_name );
+        $('conversionRequestId') && ( $('conversionRequestId').value = request.request_id );
+        $('conversionClientId') && ( $('conversionClientId').value = request.client_id );
+        $('conversionClientDisplay') && ( $('conversionClientDisplay').value = `Client: ${request.client_name}` );
+
+        $('conversionProjectNameInput') && ( $('conversionProjectNameInput').value = request.project_name );
+        $('conversionDescription') && ( $('conversionDescription').value = request.description || '' );
+        $('conversionBudget') && ( $('conversionBudget').value = request.budget_allocated || '' );
+        $('conversionDeadline') && ( $('conversionDeadline').value = request.deadline || '' );
+        $('conversionManagerSelect') && ( $('conversionManagerSelect').value = request.manager_id || '' );
+    }
+
+    function cancelConversion() {
+        const convBlock = $('convertProjectBlock');
+        const createBlock = $('createProjectBlock');
+        const readyBlock = $('readyListBlock');
+        if (convBlock) convBlock.classList.add('hidden');
+        if (createBlock) createBlock.classList.remove('hidden');
+        if (readyBlock) readyBlock.classList.remove('hidden');
+        const form = $('convertProjectForm');
+        if (form) form.reset();
+    }
+
+    // Ready requests loader
+    async function loadReadyRequests() {
+        const list = await api('list-ready-projects');
+        const readyList = $('readyList');
+        if (!readyList) return;
+        if (!Array.isArray(list) || !list.length) {
+            readyList.innerHTML = `<div class="text-sm text-gray-400">No approved requests ready to convert.</div>`;
+            return;
+        }
+        readyList.innerHTML = list.map(r => {
+            const dataStr = encodeURIComponent(JSON.stringify(r));
+            return `
+            <div class="p-3 rounded border border-gray-800 flex justify-between items-center">
+                <div>
+                    <div class="font-semibold">${escapeHtml(r.project_name)}</div>
+                    <div class="text-xs text-gray-400">${escapeHtml(r.client_name)} • ₹${Number(r.budget_allocated||0).toLocaleString()}</div>
+                </div>
+                <button class="convertBtn px-3 py-1 bg-green-600 hover:bg-green-700 transition rounded text-sm" data-request-id="${r.request_id}" data-request-data="${dataStr}">Convert</button>
+            </div>`;
+        }).join('');
+
+        // attach listeners to convert buttons (local scope)
+        readyList.querySelectorAll('.convertBtn').forEach(btn => btn.addEventListener('click', e => {
+            const reqData = JSON.parse(decodeURIComponent(e.currentTarget.dataset.requestData));
+            openConversionForm(reqData);
+        }));
+    }
+
+    // Summary & projects
+    async function loadSummary() {
+        const data = await api('summary');
+        if (data && data.total_projects !== undefined) {
+            $('totalProjects') && ( $('totalProjects').textContent = data.total_projects ?? 0 );
+            $('totalManagers') && ( $('totalManagers').textContent = data.total_managers ?? 0 );
+            $('totalBudget') && ( $('totalBudget').textContent = "₹" + Number(data.total_budget ?? 0).toLocaleString() );
+            $('avgCompletion') && ( $('avgCompletion').textContent = (data.avg_completion ? Number(data.avg_completion).toFixed(1) : 0) + "%" );
+        }
+    }
+
+    async function loadProjects() {
+        const data = await api('list');
+        projectsCache = Array.isArray(data) ? data : [];
+        renderProjectsTable(projectsCache);
+    }
+
+    function renderProjectsTable(list) {
+        const table = $('projectsTable');
+        if (!table) return;
+        if (!list.length) { table.innerHTML = `<tr><td class="py-4" colspan="6">No projects found</td></tr>`; return; }
+        table.innerHTML = list.map(p => {
+            return `
+            <tr class="border-b border-gray-800">
+                <td class="py-3">${escapeHtml(p.project_name)}</td>
+                <td class="py-3">${escapeHtml(p.manager_name ?? '-')}</td>
+                <td class="py-3">${escapeHtml(p.client_name ?? '-')}</td>
+                <td class="py-3">₹${Number(p.budget_allocated||0).toLocaleString()}</td>
+                <td class="py-3"><span class="badge" style="background: rgba(255,255,255,0.03); color: #d1d5db;">${escapeHtml(p.status)}</span></td>
+                <td class="py-3">${p.completion_percentage ?? 0}%</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // Charts
+    async function loadCharts() {
+        const [mgr, status, budget] = await Promise.all([
+            api('projects-per-manager').then(res => Array.isArray(res) ? res : []),
+            api('status-distribution').then(res => Array.isArray(res) ? res : []),
+            api('budget-trend').then(res => Array.isArray(res) ? res : [])
+        ]);
+
+        // destroy previous chart instances if present
+        if (mgrChart) { try { mgrChart.destroy(); } catch (e) {} mgrChart = null; }
+        if (statusChart) { try { statusChart.destroy(); } catch (e) {} statusChart = null; }
+        if (budgetChart) { try { budgetChart.destroy(); } catch (e) {} budgetChart = null; }
+
+        const baseOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#e5e7eb' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 30, 30, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#e5e7eb'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#e5e7eb' }
+                },
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#e5e7eb' }
+                }
+            }
+        };
+
+        const mgrCtx = $('managerChart');
+        if (mgr.length > 0 && mgrCtx) {
+            mgrChart = new Chart(mgrCtx, {
+                type: "bar",
+                data: {
+                    labels: mgr.map(m => m.manager_name || 'Unassigned'),
+                    datasets: [{ label: "Projects", data: mgr.map(m => m.project_count), backgroundColor: '#a78bfa' }]
+                },
+                options: { ...baseOptions, plugins: { legend: { display: false } }, scales: baseOptions.scales }
+            });
+        }
+
+        const statusCtx = $('statusChart');
+        if (status.length > 0 && statusCtx) {
+            statusChart = new Chart(statusCtx, {
+                type: "doughnut",
+                data: {
+                    labels: status.map(s => s.status),
+                    datasets: [{ data: status.map(s => s.count), backgroundColor: ['#a78bfa', '#38bdf8', '#4ade80', '#f87171'] }]
+                },
+                options: { ...baseOptions, scales: { x: { display: false }, y: { display: false } } }
+            });
+        }
+
+        const budgetCtx = $('budgetChart');
+        if (budget.length > 0 && budgetCtx) {
+            budgetChart = new Chart(budgetCtx, {
+                type: "line",
+                data: {
+                    labels: budget.map(b => b.date),
+                    datasets: [{
+                        label: "Budget",
+                        data: budget.map(b => b.total),
+                        tension: 0.3,
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.2)'
+                    }]
+                },
+                options: { ...baseOptions, scales: baseOptions.scales }
+            });
+        }
+    }
+
+    
+    // wire up DOM event listeners (safely — only if elements exist)
+    safeAddListener($('notifBell'), 'click', () => {
+        const dd = $('notifDropdown');
+        if (!dd) return;
+        dd.classList.toggle('open');
+        // refresh notifications when opening
+        if (dd.classList.contains('open')) loadNotifications();
+    });
+
+    safeAddListener($('markAllRead'), 'click', async () => {
+        const dropdown = $('notifDropdown');
+        if (dropdown) dropdown.classList.remove('open');
+
+        const res = await api('mark-notifications-read', { method: 'POST' });
+        if (res && res.success) {
+            showAppNotification("All notifications marked as read.", true);
+            await loadNotifications();
+        } else {
+            showAppNotification(res.error || "Failed to mark notifications as read.", false);
+        }
+    });
+
+    safeAddListener($('refreshReady'), 'click', loadReadyRequests);
+
+    safeAddListener($('cancelConversionBtn'), 'click', cancelConversion);
+
+    // create project form submission (local)
+    const createForm = $('createProjectForm');
+    if (createForm) {
+        createForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const body = Object.fromEntries(fd.entries());
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            const res = await api('create', { method: 'POST', body });
+            if (submitBtn) submitBtn.disabled = false;
+
+            if (res && res.success) {
+                showAppNotification(res.message, true);
+                e.target.reset();
+                await refreshAll();
+            } else {
+                showAppNotification(res.error || 'Failed to create project', false);
+            }
+        });
+    }
+
+    // convert form submission
+    const convertForm = $('convertProjectForm');
+    if (convertForm) {
+        convertForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const body = Object.fromEntries(fd.entries());
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            const res = await api('convert-request', { method: 'POST', body });
+            if (submitBtn) submitBtn.disabled = false;
+
+            if (res && res.success) {
+                showAppNotification(res.message, true);
+                cancelConversion();
+                await refreshAll();
+            } else {
+                showAppNotification(res.error || 'Failed to convert', false);
+            }
+        });
+    }
+
+    // search input
+    safeAddListener($('searchInput'), 'input', (e) => {
+        const q = (e.target.value || '').toLowerCase();
+        const filtered = projectsCache.filter(p => (p.project_name||'').toLowerCase().includes(q) || (p.client_name||'').toLowerCase().includes(q) || (p.manager_name||'').toLowerCase().includes(q));
+        renderProjectsTable(filtered);
+    });
+
+    // sort select
+    safeAddListener($('sortSelect'), 'change', (e) => {
+        const val = e.target.value;
+        let sorted = [...projectsCache];
+        if (val === 'budget') sorted.sort((a,b)=> (b.budget_allocated||0) - (a.budget_allocated||0));
+        else if (val === 'status') sorted.sort((a,b)=> (a.status||'').localeCompare(b.status||''));
+        else if (val === 'date') sorted.sort((a,b)=> (new Date(b.created_at || 0) - new Date(a.created_at || 0)));
+        renderProjectsTable(sorted);
+    });
+
+    // central refresh function
+    async function refreshAll(){
+        try {
+            await populateSelects();
+            await Promise.all([ loadSummary(), loadProjects(), loadCharts(), loadReadyRequests(), loadNotifications() ]);
+        } catch (error) {
+            console.error("Critical error during initial data load:", error);
+        }
+    }
+
+    // run once on injection
+    await refreshAll();
+
+})(); // end IIFE
+</script>
+<script src="/RemoteTeamPro/frontend/src/assets/js/logActivity.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  logActivity('VIEW_PROJECTS', 'Viewed projects tab');
+});
+</script>
+
+</body>
+</html>

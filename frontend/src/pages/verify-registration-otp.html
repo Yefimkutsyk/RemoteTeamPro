@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Registration OTP - RemoteTeamPro</title>
+     <link rel="icon" type="image/png" href="../assets/images/index/favicon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .button-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: radial-gradient(
+                circle at 30% 40%,
+                rgba(100, 0, 180, 0.3),
+                transparent 35%
+            ),
+            radial-gradient(
+                circle at 60% 60%,
+                rgba(150, 0, 200, 0.3),
+                transparent 35%
+            ),
+            radial-gradient(
+                circle at 70% 30%,
+                rgba(50, 0, 180, 0.25),
+                transparent 35%
+            ),
+            #0a0a0a;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            color: #e2e8f0;
+        }
+
+        .app-container-glass {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 1.25rem;
+            padding: 40px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6), 0 0 40px rgba(127, 56, 223, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            color: #e2e8f0;
+            transform-origin: center;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            font-size: 1.05rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background-color: rgba(26, 32, 44, 0.6);
+            color: #e2e8f0;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(127, 56, 223, 0.5);
+            box-shadow: 0 0 0 2px rgba(127, 56, 223, 0.25);
+        }
+
+        .success-message {
+            background-color: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container-glass">
+        <div>
+            <h2 class="text-3xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
+                Verify Registration
+            </h2>
+            <p class="text-lg text-gray-300 mb-8" id="instructionText">
+                Enter the verification code sent to your email to complete your registration
+            </p>
+        </div>
+        
+        <form class="space-y-6" id="verifyRegistrationOtpForm">
+            <!-- Email Display -->
+            <div id="emailDisplay" class="text-center">
+                <p class="text-sm text-gray-400">Verification code sent to:</p>
+                <p class="text-purple-300 font-medium" id="userEmail">Loading...</p>
+            </div>
+
+            <!-- OTP Section -->
+            <div id="otpSection">
+                <div>
+                    <label for="otp" class="block text-sm font-semibold text-gray-300 mb-2">Verification Code</label>
+                    <input id="otp" name="otp" type="text" required maxlength="6"
+                           class="form-input" placeholder="Enter the 6-digit code">
+                </div>
+                
+                <div class="flex gap-3 mt-4">
+                    <button type="submit" id="verifyOtpBtn" 
+                            class="flex-1 py-2 px-4 text-white text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg hover:from-purple-500 hover:to-indigo-500 focus:outline-none transition-all duration-200">
+                        <span class="button-content">
+                            <span id="verifyBtnText">Verify Code</span>
+                            <i class="fas fa-check" id="verifyBtnIcon"></i>
+                        </span>
+                    </button>
+                    
+                    <button type="button" id="resendOtpBtn" 
+                            class="flex-1 py-2 px-4 text-purple-300 text-sm font-semibold border border-purple-400 rounded-lg hover:bg-purple-400 hover:text-white focus:outline-none transition-all duration-200">
+                        <span class="button-content">
+                            <span id="resendBtnText">Resend</span>
+                            <i class="fas fa-redo" id="resendBtnIcon"></i>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="messageArea" class="text-center hidden mt-4">
+                <div id="message" class="text-sm p-3 rounded-lg"></div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="login.html" class="text-purple-400 hover:text-purple-300 transition-colors duration-150">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Login
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - JavaScript is running!');
+            
+            // Get email from URL parameters or localStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailFromUrl = urlParams.get('email');
+            const emailFromStorage = localStorage.getItem('registrationEmail');
+            const userEmail = emailFromUrl || emailFromStorage;
+            
+            console.log('User email found:', userEmail);
+
+            // Display user email
+            if (userEmail) {
+                document.getElementById('userEmail').textContent = userEmail;
+            } else {
+                document.getElementById('userEmail').textContent = 'Email not found';
+            }
+
+            // Form submission handler
+            const form = document.getElementById('verifyRegistrationOtpForm');
+            console.log('Form found:', form);
+            
+            if (!form) {
+                console.error('Form not found!');
+                return;
+            }
+            
+            form.addEventListener('submit', function(e) {
+                console.log('Form submitted!');
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!userEmail) {
+                    showMessage('Email not found. Please try registering again.', 'error');
+                    return false;
+                }
+                
+                const otp = document.getElementById('otp').value.trim();
+                
+                // Validate OTP format
+                if (!otp || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+                    showMessage('Please enter a valid 6-digit verification code.', 'error');
+                    return false;
+                }
+                
+                // Call async function
+                handleVerification(userEmail, otp);
+                return false;
+            });
+            
+            async function handleVerification(userEmail, otp) {
+
+                setButtonLoading('verifyOtpBtn', true);
+                hideMessage();
+
+                try {
+                    console.log('Sending verification request:', { email: userEmail, otp: otp });
+                    
+                    const response = await fetch('../../../backend/api/auth/verify-registration-otp.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            email: userEmail,
+                            otp: otp
+                        })
+                    });
+
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    
+                    if (!response.ok) {
+                        console.error('Response not OK:', response.status, response.statusText);
+                        const errorText = await response.text();
+                        console.error('Error response body:', errorText);
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('Response result:', result);
+
+                    if (result.success) {
+                        showMessage('Registration completed successfully! Redirecting to login...', 'success');
+                        
+                        // Clear registration email from localStorage
+                        localStorage.removeItem('registrationEmail');
+                        
+                        // Redirect to login page
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    } else {
+                        showMessage(result.message || 'Verification failed. Please try again.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Verification error:', error);
+                    console.error('Error details:', error.message);
+                    showMessage('An error occurred during verification. Please check the console for details and try again.', 'error');
+                } finally {
+                    setButtonLoading('verifyOtpBtn', false);
+                }
+            }
+
+            // Resend OTP handler
+            document.getElementById('resendOtpBtn').addEventListener('click', async function() {
+                if (!userEmail) {
+                    showMessage('Email not found. Please try registering again.', 'error');
+                    return;
+                }
+
+                setButtonLoading('resendOtpBtn', true);
+                hideMessage();
+
+                try {
+                    const response = await fetch('../../../backend/api/auth/resend-registration-otp.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            email: userEmail
+                        })
+                    });
+
+                    let result;
+                    const text = await response.text();
+                    try {
+                        result = JSON.parse(text);
+                    } catch (parseErr) {
+                        console.error('Non-JSON response from resend endpoint:', text);
+                        throw new Error('Server returned invalid response');
+                    }
+
+                    if (response.ok && result && result.success) {
+                        showMessage('New verification code sent successfully!', 'success');
+                    } else {
+                        const msg = (result && result.message) ? result.message : 'Failed to resend verification code.';
+                        showMessage(msg, 'error');
+                    }
+                } catch (error) {
+                    console.error('Resend error:', error);
+                    showMessage('An error occurred while resending the code. Please try again.', 'error');
+                } finally {
+                    setButtonLoading('resendOtpBtn', false);
+                }
+            });
+
+            // Helper functions
+            function setButtonLoading(buttonId, loading) {
+                const button = document.getElementById(buttonId);
+                if (!button) {
+                    console.error('Button not found:', buttonId);
+                    return;
+                }
+                
+                let textSpan, icon;
+                
+                if (buttonId === 'verifyOtpBtn') {
+                    textSpan = document.getElementById('verifyBtnText');
+                    icon = document.getElementById('verifyBtnIcon');
+                } else if (buttonId === 'resendOtpBtn') {
+                    textSpan = document.getElementById('resendBtnText');
+                    icon = document.getElementById('resendBtnIcon');
+                }
+                
+                if (!textSpan || !icon) {
+                    console.error('Text span or icon not found for button:', buttonId);
+                    return;
+                }
+                
+                if (loading) {
+                    button.disabled = true;
+                    textSpan.innerHTML = 'Loading...';
+                    icon.className = 'spinner';
+                } else {
+                    button.disabled = false;
+                    if (buttonId === 'verifyOtpBtn') {
+                        textSpan.textContent = 'Verify Code';
+                        icon.className = 'fas fa-check';
+                    } else if (buttonId === 'resendOtpBtn') {
+                        textSpan.textContent = 'Resend';
+                        icon.className = 'fas fa-redo';
+                    }
+                }
+            }
+
+            function showMessage(message, type) {
+                const messageArea = document.getElementById('messageArea');
+                const messageDiv = document.getElementById('message');
+                
+                messageDiv.textContent = message;
+                messageDiv.className = `text-sm p-3 rounded-lg ${type === 'success' ? 'success-message' : 'error-message'}`;
+                messageArea.classList.remove('hidden');
+            }
+
+            function hideMessage() {
+                document.getElementById('messageArea').classList.add('hidden');
+            }
+
+            // Auto-focus OTP input
+            document.getElementById('otp').focus();
+
+            // Format OTP input (numbers only)
+            document.getElementById('otp').addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            });
+            
+        }); // End of DOMContentLoaded event listener
+    </script>
+</body>
+</html>
